@@ -21,6 +21,8 @@ import com.planwith.planwith_fo_story.application.port.out.StoryQueryPort;
 import com.planwith.planwith_fo_story.application.query.GetStoryDetailQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryFeedQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryListQuery;
+import com.planwith.planwith_fo_story.application.query.GetMyStoryDetailQuery;
+import com.planwith.planwith_fo_story.application.query.GetMyStoryListQuery;
 import com.planwith.planwith_fo_story.application.query.SearchStoryQuery;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
 import com.planwith.planwith_fo_story.application.query.StoryFeedType;
@@ -80,11 +82,7 @@ public class StoryQueryService implements StoryQueryUseCase {
 
 	@Override
 	public StoryDetailView getDetail(GetStoryDetailQuery query) {
-		Story story = storyQueryPort.findByStoryUuid(query.storyUuid())
-				.orElseThrow(() -> new StoryNotFoundException(query.storyUuid().toString()));
-		if (story.isDeleted()) {
-			throw new StoryNotFoundException(query.storyUuid().toString());
-		}
+		Story story = findActiveStory(query.storyUuid());
 		if (!canRead(story, query.viewerUuid())) {
 			throw new StoryAccessDeniedException();
 		}
@@ -146,6 +144,23 @@ public class StoryQueryService implements StoryQueryUseCase {
 		return new StoryListView(toSummaries(stories), Math.max(0, query.page()), query.resolvedSize());
 	}
 
+	@Override
+	public StoryListView getMyStories(GetMyStoryListQuery query) {
+		List<Story> stories = storyQueryPort.findMyStories(query);
+		return new StoryListView(toSummaries(stories), Math.max(0, query.page()), query.resolvedSize());
+	}
+
+	@Override
+	public StoryDetailView getMyStoryDetail(GetMyStoryDetailQuery query) {
+		Story story = findActiveStory(query.storyUuid());
+		if (!story.memberUuid().value().equals(query.memberUuid())) {
+			throw new StoryAccessDeniedException();
+		}
+		StoryDetailView view = toDetail(story);
+		storyQueryCachePort.saveDetail(query.storyUuid(), view);
+		return maskScheduleForViewer(view, query.memberUuid());
+	}
+
 	private Set<UUID> resolveFeedAuthors(StoryFeedType feedType, UUID viewerUuid) {
 		if (feedType == StoryFeedType.FOLLOWING) {
 			return storyFeedMemberQueryPort.findEligibleFollowingAuthors(viewerUuid).orElse(null);
@@ -155,6 +170,15 @@ public class StoryQueryService implements StoryQueryUseCase {
 			return Set.of();
 		}
 		return storyFeedMemberQueryPort.filterEligibleAuthors(joinedCreators).orElse(Set.of());
+	}
+
+	private Story findActiveStory(UUID storyUuid) {
+		Story story = storyQueryPort.findByStoryUuid(storyUuid)
+				.orElseThrow(() -> new StoryNotFoundException(storyUuid.toString()));
+		if (story.isDeleted()) {
+			throw new StoryNotFoundException(storyUuid.toString());
+		}
+		return story;
 	}
 
 	private List<Story> findReadableStories(

@@ -3,6 +3,8 @@ package com.planwith.planwith_fo_story.application.port.in;
 import com.planwith.planwith_fo_story.application.query.GetStoryDetailQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryFeedQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryListQuery;
+import com.planwith.planwith_fo_story.application.query.GetMyStoryDetailQuery;
+import com.planwith.planwith_fo_story.application.query.GetMyStoryListQuery;
 import com.planwith.planwith_fo_story.application.query.SearchStoryQuery;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
 import com.planwith.planwith_fo_story.application.query.StoryFeedView;
@@ -17,4 +19,8 @@ public interface StoryQueryUseCase {
 	StoryFeedView getFeed(GetStoryFeedQuery query);
 
 	StoryListView search(SearchStoryQuery query);
+
+	StoryListView getMyStories(GetMyStoryListQuery query);
+
+	StoryDetailView getMyStoryDetail(GetMyStoryDetailQuery query);
 }

@@ -4,11 +4,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import java.time.LocalDate;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.planwith.planwith_fo_story.domain.model.VisibilityScope;
 
 public interface SpringDataStoryRepository extends JpaRepository<StoryJpaEntity, Long> {
 
@@ -50,6 +54,26 @@ public interface SpringDataStoryRepository extends JpaRepository<StoryJpaEntity,
 			+ "and lower(city.cityName) like lower(concat('%', :keyword, '%')) "
 			+ "order by story.createdAt desc")
 	List<StoryJpaEntity> searchActiveByCityName(@Param("keyword") String keyword, Pageable pageable);
+
+	@Query("select distinct story from StoryJpaEntity story "
+			+ "left join story.visitCountries country "
+			+ "left join country.cities city "
+			+ "where story.memberUuid = :memberUuid "
+			+ "and story.deletedAt is null "
+			+ "and (:country is null or lower(country.countryName) like lower(concat('%', :country, '%'))) "
+			+ "and (:city is null or lower(city.cityName) like lower(concat('%', :city, '%'))) "
+			+ "and (:visibilityScope is null or story.visibilityScope = :visibilityScope) "
+			+ "and (:travelStartDate is null or story.endDate >= :travelStartDate) "
+			+ "and (:travelEndDate is null or story.startDate <= :travelEndDate)")
+	List<StoryJpaEntity> findMyStories(
+			@Param("memberUuid") UUID memberUuid,
+			@Param("country") String country,
+			@Param("city") String city,
+			@Param("visibilityScope") VisibilityScope visibilityScope,
+			@Param("travelStartDate") LocalDate travelStartDate,
+			@Param("travelEndDate") LocalDate travelEndDate,
+			Pageable pageable
+	);
 
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query("update StoryJpaEntity story set story.viewCount = story.viewCount + 1 "
