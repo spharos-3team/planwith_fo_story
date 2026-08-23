@@ -12,6 +12,7 @@ import com.planwith.planwith_fo_story.config.StoryKafkaProperties;
 import com.planwith.planwith_fo_story.config.StoryOutboxProperties;
 import com.planwith.planwith_fo_story.config.StoryOpenAiProperties;
 import com.planwith.planwith_fo_story.config.StoryScheduleProperties;
+import com.planwith.planwith_fo_story.composition.config.StoryDetailScreenProperties;
 
 @SpringBootApplication
 @EnableScheduling
@@ -22,7 +23,8 @@ import com.planwith.planwith_fo_story.config.StoryScheduleProperties;
 		StoryKafkaProperties.class,
 		StoryOutboxProperties.class,
 		StoryOpenAiProperties.class,
-		StoryScheduleProperties.class
+		StoryScheduleProperties.class,
+		StoryDetailScreenProperties.class
 })
 public class PlanwithFoStoryApplication {
 
