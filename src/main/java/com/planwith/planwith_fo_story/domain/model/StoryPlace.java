@@ -7,6 +7,7 @@ import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateExceptio
 public final class StoryPlace {
 
 	private static final int PLACE_NAME_MAX_LENGTH = 255;
+	private static final int MAX_PLACE_IMAGES = 5;
 
 	private final Long storyPlaceId;
 	private final Long storyVisitCityId;
@@ -60,6 +61,9 @@ public final class StoryPlace {
 	}
 
 	private static void validateImageOrders(List<StoryPlaceImage> images) {
+		if (images.size() > MAX_PLACE_IMAGES) {
+			throw new InvalidStoryStateException("장소 이미지는 장소당 최대 5개까지 허용됩니다.");
+		}
 		long distinctOrders = images.stream().map(StoryPlaceImage::imageOrder).distinct().count();
 		if (distinctOrders != images.size()) {
 			throw new InvalidStoryStateException("장소 이미지 순서는 중복될 수 없습니다.");

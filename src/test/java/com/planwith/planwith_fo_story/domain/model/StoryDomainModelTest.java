@@ -38,7 +38,7 @@ class StoryDomainModelTest {
 	@Test
 	void replaceChildrenKeepsStoryAggregateHierarchy() {
 		LocalDateTime now = LocalDateTime.of(2026, 8, 23, 12, 0);
-		Story story = StoryTestFactory.create(author, VisibilityScope.ALL)
+		Story story = StoryTestFactory.create(author, VisibilityScope.PRIVATE)
 				.replaceChildren(
 						List.of(StoryVisitCountry.create(
 								"Korea",
@@ -90,5 +90,80 @@ class StoryDomainModelTest {
 				LocalDateTime.of(2026, 8, 23, 11, 0)
 		)).isInstanceOf(InvalidStoryStateException.class)
 				.hasMessageContaining("커버 이미지");
+	}
+
+	@Test
+	void rejectsScheduleVisibleWithoutScheduleUuid() {
+		assertThatThrownBy(() -> Story.create(
+				com.planwith.planwith_fo_story.domain.model.vo.StoryUuid.generate(),
+				author,
+				null,
+				true,
+				"제목",
+				"본문",
+				"https://img.example/cover.png",
+				LocalDate.of(2026, 8, 1),
+				LocalDate.of(2026, 8, 5),
+				true,
+				VisibilityScope.ALL,
+				LocalDateTime.of(2026, 8, 23, 11, 0)
+		)).isInstanceOf(InvalidStoryStateException.class)
+				.hasMessageContaining("일정 UUID");
+	}
+
+	@Test
+	void rejectsVideoCoverImage() {
+		assertThatThrownBy(() -> Story.create(
+				com.planwith.planwith_fo_story.domain.model.vo.StoryUuid.generate(),
+				author,
+				null,
+				false,
+				"제목",
+				"본문",
+				"https://img.example/cover.mp4",
+				LocalDate.of(2026, 8, 1),
+				LocalDate.of(2026, 8, 5),
+				true,
+				VisibilityScope.ALL,
+				LocalDateTime.of(2026, 8, 23, 11, 0)
+		)).isInstanceOf(InvalidStoryStateException.class)
+				.hasMessageContaining("동영상");
+	}
+
+	@Test
+	void rejectsInvalidTravelPeriod() {
+		assertThatThrownBy(() -> Story.create(
+				com.planwith.planwith_fo_story.domain.model.vo.StoryUuid.generate(),
+				author,
+				null,
+				false,
+				"제목",
+				"본문",
+				"https://img.example/cover.png",
+				LocalDate.of(2026, 8, 5),
+				LocalDate.of(2026, 8, 1),
+				true,
+				VisibilityScope.ALL,
+				LocalDateTime.of(2026, 8, 23, 11, 0)
+		)).isInstanceOf(InvalidStoryStateException.class)
+				.hasMessageContaining("종료일");
+	}
+
+	@Test
+	void rejectsDuplicateCountryOnReplaceChildren() {
+		LocalDateTime now = LocalDateTime.of(2026, 8, 23, 12, 0);
+		Story story = StoryTestFactory.create(author, VisibilityScope.ALL);
+
+		assertThatThrownBy(() -> story.replaceChildren(
+				List.of(
+						StoryVisitCountry.create("Korea", 0, List.of(StoryVisitCity.create("Seoul", 0))),
+						StoryVisitCountry.create("korea", 1, List.of(StoryVisitCity.create("Busan", 0)))
+				),
+				List.of(),
+				List.of(),
+				List.of(),
+				now
+		)).isInstanceOf(InvalidStoryStateException.class)
+				.hasMessageContaining("방문국가");
 	}
 }

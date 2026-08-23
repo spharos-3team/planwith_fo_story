@@ -6,10 +6,12 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateException;
+import com.planwith.planwith_fo_story.domain.exception.MemberAuthenticationRequiredException;
 import com.planwith.planwith_fo_story.domain.exception.StoryAccessDeniedException;
 import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
 import com.planwith.planwith_fo_story.dto.ApiErrorResponse;
@@ -20,6 +22,25 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(InvalidCredentialsException.class)
 	public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(InvalidCredentialsException exception) {
 		return createErrorResponse(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", exception.getMessage());
+	}
+
+	@ExceptionHandler(MemberAuthenticationRequiredException.class)
+	public ResponseEntity<ApiErrorResponse> handleMemberAuthenticationRequired(
+			MemberAuthenticationRequiredException exception
+	) {
+		return createErrorResponse(HttpStatus.UNAUTHORIZED, "MEMBER_AUTHENTICATION_REQUIRED", exception.getMessage());
+	}
+
+	@ExceptionHandler(MissingRequestHeaderException.class)
+	public ResponseEntity<ApiErrorResponse> handleMissingRequestHeader(MissingRequestHeaderException exception) {
+		if ("X-Member-UUID".equals(exception.getHeaderName())) {
+			return createErrorResponse(
+					HttpStatus.UNAUTHORIZED,
+					"MEMBER_AUTHENTICATION_REQUIRED",
+					"로그인한 회원만 스토리를 작성할 수 있습니다."
+			);
+		}
+		return createErrorResponse(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", exception.getMessage());
 	}
 
 	@ExceptionHandler(StoryNotFoundException.class)

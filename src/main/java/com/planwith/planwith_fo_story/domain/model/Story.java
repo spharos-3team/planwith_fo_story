@@ -10,11 +10,13 @@ import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateExceptio
 import com.planwith.planwith_fo_story.domain.exception.StoryAccessDeniedException;
 import com.planwith.planwith_fo_story.domain.model.vo.MemberUuid;
 import com.planwith.planwith_fo_story.domain.model.vo.StoryUuid;
+import com.planwith.planwith_fo_story.domain.service.StoryCommonValidator;
 
 public final class Story {
 
 	private static final int TITLE_MAX_LENGTH = 200;
 	private static final int COVER_IMAGE_MAX_LENGTH = 500;
+	private static final StoryCommonValidator COMMON_VALIDATOR = new StoryCommonValidator();
 
 	private final Long storyId;
 	private final StoryUuid storyUuid;
@@ -88,7 +90,14 @@ public final class Story {
 		this.places = List.copyOf(places == null ? List.of() : places);
 		this.tags = List.copyOf(tags == null ? List.of() : tags);
 		this.visibilityMembers = List.copyOf(visibilityMembers == null ? List.of() : visibilityMembers);
-		validatePeriod(this.startDate, this.endDate);
+		COMMON_VALIDATOR.validateBody(
+				this.scheduleUuid,
+				this.scheduleVisible,
+				this.coverImageUrl,
+				this.startDate,
+				this.endDate,
+				this.visibilityScope
+		);
 	}
 
 	public static Story create(
@@ -117,7 +126,7 @@ public final class Story {
 				startDate,
 				endDate,
 				commentEnabled,
-				visibilityScope == null ? VisibilityScope.ALL : visibilityScope,
+				visibilityScope,
 				AiModerationStatus.UNVERIFIED,
 				0L,
 				0L,
@@ -219,6 +228,7 @@ public final class Story {
 	public Story changeVisibility(MemberUuid actor, VisibilityScope visibilityScope, LocalDateTime updatedAt) {
 		ensureOwner(actor);
 		ensureActive();
+		COMMON_VALIDATOR.validateVisibilityMembers(visibilityScope, visibilityMembers);
 		return copy(
 				scheduleUuid,
 				scheduleVisible,
@@ -290,6 +300,7 @@ public final class Story {
 			LocalDateTime updatedAt
 	) {
 		ensureActive();
+		COMMON_VALIDATOR.validateChildren(visibilityScope, visitCountries, places, tags, visibilityMembers);
 		return copy(
 				scheduleUuid,
 				scheduleVisible,
@@ -427,13 +438,8 @@ public final class Story {
 		if (trimmed.length() > COVER_IMAGE_MAX_LENGTH) {
 			throw new InvalidStoryStateException("커버 이미지 URL은 500자를 초과할 수 없습니다.");
 		}
+		COMMON_VALIDATOR.rejectVideoUrl(trimmed, "대표사진");
 		return trimmed;
-	}
-
-	private static void validatePeriod(LocalDate startDate, LocalDate endDate) {
-		if (endDate.isBefore(startDate)) {
-			throw new InvalidStoryStateException("여행 종료일은 시작일보다 빠를 수 없습니다.");
-		}
 	}
 
 	public Long storyId() {

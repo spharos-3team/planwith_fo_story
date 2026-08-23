@@ -4,12 +4,14 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateException;
+import com.planwith.planwith_fo_story.domain.service.StoryCommonValidator;
 
 public final class StoryPlaceImage {
 
 	private static final int IMAGE_URL_MAX_LENGTH = 500;
 	private static final int MIN_IMAGE_ORDER = 1;
 	private static final int MAX_IMAGE_ORDER = 5;
+	private static final StoryCommonValidator COMMON_VALIDATOR = new StoryCommonValidator();
 
 	private final Long storyPlaceImageId;
 	private final String imageUrl;
@@ -44,6 +46,7 @@ public final class StoryPlaceImage {
 		if (trimmed.length() > IMAGE_URL_MAX_LENGTH) {
 			throw new InvalidStoryStateException("장소 이미지 URL은 500자를 초과할 수 없습니다.");
 		}
+		COMMON_VALIDATOR.rejectVideoUrl(trimmed, "장소 이미지");
 		return trimmed;
 	}
 

@@ -26,7 +26,7 @@ import com.planwith.planwith_fo_story.application.command.DeleteStoryCommand;
 import com.planwith.planwith_fo_story.application.command.UpdateStoryCommand;
 import com.planwith.planwith_fo_story.application.port.in.StoryCommandUseCase;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
-import com.planwith.planwith_fo_story.domain.exception.StoryAccessDeniedException;
+import com.planwith.planwith_fo_story.domain.exception.MemberAuthenticationRequiredException;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -45,10 +45,13 @@ public class StoryCommandController {
 
 	// 스토리 생성
 	@PostMapping
-	public ResponseEntity<StoryDetailView> create(@Valid @RequestBody CreateStoryRequest request) {
+	public ResponseEntity<StoryDetailView> create(
+			@RequestHeader("X-Member-UUID") UUID actorUuid,
+			@Valid @RequestBody CreateStoryRequest request
+	) {
 		log.info("StoryCommandController : POST create : 스토리 생성 요청");
 		return ResponseEntity.status(HttpStatus.CREATED).body(storyCommandUseCase.create(new CreateStoryCommand(
-				request.memberUuid(),
+				requireActor(actorUuid),
 				request.scheduleUuid(),
 				request.resolvedScheduleVisible(),
 				request.title(),
@@ -56,8 +59,8 @@ public class StoryCommandController {
 				request.coverImageUrl(),
 				request.startDate(),
 				request.endDate(),
-				request.resolvedCommentEnabled(),
-				request.resolvedVisibilityScope()
+				request.commentEnabled(),
+				request.visibilityScope()
 		)));
 	}
 
@@ -125,7 +128,7 @@ public class StoryCommandController {
 
 	private static UUID requireActor(UUID actorUuid) {
 		if (actorUuid == null) {
-			throw new StoryAccessDeniedException();
+			throw new MemberAuthenticationRequiredException();
 		}
 		return actorUuid;
 	}

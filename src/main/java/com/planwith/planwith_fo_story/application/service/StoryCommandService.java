@@ -26,6 +26,7 @@ import com.planwith.planwith_fo_story.application.port.out.StoryOutboxMessage;
 import com.planwith.planwith_fo_story.application.port.out.StoryQueryCachePort;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
 import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateException;
+import com.planwith.planwith_fo_story.domain.exception.MemberAuthenticationRequiredException;
 import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
 import com.planwith.planwith_fo_story.domain.model.Story;
 import com.planwith.planwith_fo_story.domain.model.vo.MemberUuid;
@@ -50,6 +51,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	@Transactional
 	public StoryDetailView create(CreateStoryCommand command) {
 		log.info("StoryCommandService : create : 스토리 생성 비즈니스 로직 시작");
+		requireActor(command.memberUuid());
 		LocalDateTime now = LocalDateTime.now(clock);
 		Story story = Story.create(
 				StoryUuid.generate(),
@@ -81,6 +83,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	@Transactional
 	public StoryDetailView update(UpdateStoryCommand command) {
 		log.info("StoryCommandService : update : 스토리 수정 비즈니스 로직 시작 - storyUuid={}", command.storyUuid());
+		requireActor(command.actorUuid());
 		LocalDateTime now = LocalDateTime.now(clock);
 		Story updated = loadActive(command.storyUuid()).update(
 				MemberUuid.of(command.actorUuid()),
@@ -109,6 +112,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	@Transactional
 	public void delete(DeleteStoryCommand command) {
 		log.info("StoryCommandService : delete : 스토리 삭제 비즈니스 로직 시작 - storyUuid={}", command.storyUuid());
+		requireActor(command.actorUuid());
 		Story deleted = loadActive(command.storyUuid())
 				.delete(MemberUuid.of(command.actorUuid()), LocalDateTime.now(clock));
 		Story saved = storyCommandPort.save(deleted);
@@ -126,6 +130,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	@Transactional
 	public StoryDetailView changeVisibility(ChangeStoryVisibilityCommand command) {
 		log.info("StoryCommandService : changeVisibility : 스토리 공개범위 변경 시작 - storyUuid={}", command.storyUuid());
+		requireActor(command.actorUuid());
 		Story changed = loadActive(command.storyUuid())
 				.changeVisibility(MemberUuid.of(command.actorUuid()), command.visibilityScope(), LocalDateTime.now(clock));
 		Story saved = storyCommandPort.save(changed);
@@ -144,6 +149,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	@Transactional
 	public StoryDetailView changeCommentEnabled(ChangeStoryCommentEnabledCommand command) {
 		log.info("StoryCommandService : changeCommentEnabled : 스토리 댓글 허용 변경 시작 - storyUuid={}", command.storyUuid());
+		requireActor(command.actorUuid());
 		Story changed = loadActive(command.storyUuid())
 				.changeCommentEnabled(MemberUuid.of(command.actorUuid()), command.commentEnabled(), LocalDateTime.now(clock));
 		Story saved = storyCommandPort.save(changed);
@@ -156,6 +162,12 @@ public class StoryCommandService implements StoryCommandUseCase {
 		evictCaches(saved);
 		log.info("StoryCommandService : changeCommentEnabled : 스토리 댓글 허용 변경 완료 - storyUuid={}", saved.storyUuid());
 		return toDetail(saved);
+	}
+
+	private void requireActor(UUID actorUuid) {
+		if (actorUuid == null) {
+			throw new MemberAuthenticationRequiredException();
+		}
 	}
 
 	private Story loadActive(UUID storyUuid) {
