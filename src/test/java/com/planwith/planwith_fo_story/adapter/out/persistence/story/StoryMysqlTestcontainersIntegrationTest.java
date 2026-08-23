@@ -2,6 +2,7 @@ package com.planwith.planwith_fo_story.adapter.out.persistence.story;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -53,14 +54,12 @@ class StoryMysqlTestcontainersIntegrationTest {
 		StoryDetailView created = storyCommandUseCase.create(new CreateStoryCommand(
 				UUID.randomUUID(),
 				null,
+				false,
 				"MySQL 스토리",
 				"Testcontainers 본문",
-				null,
-				null,
-				null,
-				null,
-				null,
-				null,
+				"https://img.example/cover.png",
+				LocalDate.of(2026, 8, 1),
+				LocalDate.of(2026, 8, 5),
 				true,
 				VisibilityScope.ALL
 		));
@@ -72,14 +71,12 @@ class StoryMysqlTestcontainersIntegrationTest {
 				StoryUuid.generate(),
 				MemberUuid.of(UUID.randomUUID()),
 				null,
+				false,
 				"추가 저장",
 				"본문",
-				null,
-				null,
-				null,
-				null,
-				null,
-				null,
+				"https://img.example/cover.png",
+				LocalDate.of(2026, 8, 1),
+				LocalDate.of(2026, 8, 5),
 				true,
 				VisibilityScope.PRIVATE,
 				LocalDateTime.of(2026, 8, 23, 12, 0)

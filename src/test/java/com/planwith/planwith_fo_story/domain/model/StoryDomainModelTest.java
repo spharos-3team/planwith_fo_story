@@ -1,0 +1,94 @@
+package com.planwith.planwith_fo_story.domain.model;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
+import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateException;
+import com.planwith.planwith_fo_story.domain.model.vo.MemberUuid;
+
+class StoryDomainModelTest {
+
+	private final MemberUuid author = MemberUuid.of(UUID.randomUUID());
+
+	@Test
+	void createAppliesDefaultCountersAndUnverifiedStatus() {
+		Story story = StoryTestFactory.create(author, VisibilityScope.ALL);
+
+		assertThat(story.scheduleVisible()).isFalse();
+		assertThat(story.coverImageUrl()).isEqualTo("https://img.example/cover.png");
+		assertThat(story.startDate()).isEqualTo(LocalDate.of(2026, 8, 1));
+		assertThat(story.endDate()).isEqualTo(LocalDate.of(2026, 8, 5));
+		assertThat(story.aiModerationStatus()).isEqualTo(AiModerationStatus.UNVERIFIED);
+		assertThat(story.viewCount()).isZero();
+		assertThat(story.storyLikeCount()).isZero();
+		assertThat(story.storyCommentCount()).isZero();
+		assertThat(story.visitCountries()).isEmpty();
+		assertThat(story.places()).isEmpty();
+		assertThat(story.tags()).isEmpty();
+		assertThat(story.visibilityMembers()).isEmpty();
+	}
+
+	@Test
+	void replaceChildrenKeepsStoryAggregateHierarchy() {
+		LocalDateTime now = LocalDateTime.of(2026, 8, 23, 12, 0);
+		Story story = StoryTestFactory.create(author, VisibilityScope.ALL)
+				.replaceChildren(
+						List.of(StoryVisitCountry.create(
+								"Korea",
+								0,
+								List.of(StoryVisitCity.create("Busan", 0))
+						)),
+						List.of(StoryPlace.create(
+								null,
+								"해운대",
+								0,
+								List.of(StoryPlaceImage.create("https://img.example/1.png", 1, now))
+						)),
+						List.of(StoryTag.create("여행")),
+						List.of(StoryVisibilityMember.create(MemberUuid.of(UUID.randomUUID()), now)),
+						now
+				);
+
+		assertThat(story.visitCountries()).singleElement().satisfies(country -> {
+			assertThat(country.countryName()).isEqualTo("Korea");
+			assertThat(country.cities()).extracting(StoryVisitCity::cityName).containsExactly("Busan");
+		});
+		assertThat(story.places()).extracting(StoryPlace::placeName).containsExactly("해운대");
+		assertThat(story.places().get(0).images()).extracting(StoryPlaceImage::imageOrder).containsExactly(1);
+		assertThat(story.tags()).extracting(StoryTag::tagName).containsExactly("여행");
+		assertThat(story.visibilityMembers()).hasSize(1);
+	}
+
+	@Test
+	void rejectsInvalidPlaceImageOrder() {
+		assertThatThrownBy(() -> StoryPlaceImage.create("https://img.example/1.png", 6, LocalDateTime.now()))
+				.isInstanceOf(InvalidStoryStateException.class)
+				.hasMessageContaining("1부터 5까지");
+	}
+
+	@Test
+	void requiresCoverImageAndTravelPeriod() {
+		assertThatThrownBy(() -> Story.create(
+				com.planwith.planwith_fo_story.domain.model.vo.StoryUuid.generate(),
+				author,
+				null,
+				false,
+				"제목",
+				"본문",
+				" ",
+				LocalDate.of(2026, 8, 1),
+				LocalDate.of(2026, 8, 5),
+				true,
+				VisibilityScope.ALL,
+				LocalDateTime.of(2026, 8, 23, 11, 0)
+		)).isInstanceOf(InvalidStoryStateException.class)
+				.hasMessageContaining("커버 이미지");
+	}
+}
