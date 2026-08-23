@@ -1,19 +1,22 @@
 package com.planwith.planwith_fo_story.adapter.in.web.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
+import com.planwith.planwith_fo_story.application.command.CreateStoryCommand;
 import com.planwith.planwith_fo_story.domain.model.VisibilityScope;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 @Schema(description = "스토리 생성 요청")
 public record CreateStoryRequest(
-		UUID scheduleUuid,
-		Boolean scheduleVisible,
 		@NotBlank(message = "제목은 필수입니다.")
 		@Size(max = 200, message = "제목은 200자를 초과할 수 없습니다.")
 		String title,
@@ -29,9 +32,82 @@ public record CreateStoryRequest(
 		@NotNull(message = "댓글 허용 여부는 필수입니다.")
 		Boolean commentEnabled,
 		@NotNull(message = "공개범위는 필수입니다.")
-		VisibilityScope visibilityScope
+		VisibilityScope visibilityScope,
+		UUID scheduleUuid,
+		Boolean scheduleVisible,
+		Boolean aiVerificationRequested,
+		@NotEmpty(message = "방문국가는 최소 1개 이상이어야 합니다.")
+		@Valid
+		List<CreateStoryCountryRequest> countries,
+		@Valid
+		List<CreateStoryPlaceRequest> places,
+		List<@Size(max = 50, message = "태그는 50자를 초과할 수 없습니다.") String> tags,
+		List<UUID> visibilityMemberUuids
 ) {
-	public boolean resolvedScheduleVisible() {
-		return Boolean.TRUE.equals(scheduleVisible);
+	public CreateStoryCommand toCommand(UUID memberUuid) {
+		return new CreateStoryCommand(
+				memberUuid,
+				scheduleUuid,
+				Boolean.TRUE.equals(scheduleVisible),
+				title,
+				content,
+				coverImageUrl,
+				startDate,
+				endDate,
+				commentEnabled,
+				visibilityScope,
+				Boolean.TRUE.equals(aiVerificationRequested),
+				toCountries(),
+				toPlaces(),
+				tags == null ? List.of() : List.copyOf(tags),
+				visibilityMemberUuids == null ? List.of() : List.copyOf(visibilityMemberUuids)
+		);
+	}
+
+	private List<CreateStoryCommand.Country> toCountries() {
+		return IntStream.range(0, countries.size())
+				.mapToObj(index -> {
+					CreateStoryCountryRequest country = countries.get(index);
+					return new CreateStoryCommand.Country(
+							country.countryName(),
+							resolveOrder(country.displayOrder(), index),
+							toCities(country.cities())
+					);
+				})
+				.toList();
+	}
+
+	private List<CreateStoryCommand.City> toCities(List<CreateStoryCityRequest> cities) {
+		return IntStream.range(0, cities.size())
+				.mapToObj(index -> {
+					CreateStoryCityRequest city = cities.get(index);
+					return new CreateStoryCommand.City(
+							city.cityName(),
+							resolveOrder(city.displayOrder(), index)
+					);
+				})
+				.toList();
+	}
+
+	private List<CreateStoryCommand.Place> toPlaces() {
+		if (places == null) {
+			return List.of();
+		}
+		return IntStream.range(0, places.size())
+				.mapToObj(index -> {
+					CreateStoryPlaceRequest place = places.get(index);
+					return new CreateStoryCommand.Place(
+							place.placeName(),
+							resolveOrder(place.displayOrder(), index),
+							place.images() == null ? List.of() : place.images().stream()
+									.map(image -> new CreateStoryCommand.PlaceImage(image.imageUrl(), image.imageOrder()))
+									.toList()
+					);
+				})
+				.toList();
+	}
+
+	private static int resolveOrder(Integer displayOrder, int fallback) {
+		return displayOrder == null ? fallback : displayOrder;
 	}
 }

@@ -18,7 +18,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.planwith.planwith_fo_story.adapter.out.persistence.outbox.SpringDataStoryOutboxRepository;
-import com.planwith.planwith_fo_story.application.command.CreateStoryCommand;
+import com.planwith.planwith_fo_story.application.command.CreateStoryCommandFactory;
 import com.planwith.planwith_fo_story.application.port.in.StoryCommandUseCase;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
 import com.planwith.planwith_fo_story.domain.model.Story;
@@ -51,16 +51,11 @@ class StoryMysqlTestcontainersIntegrationTest {
 
 	@Test
 	void persistsStoryAndOutboxOnMysql() {
-		StoryDetailView created = storyCommandUseCase.create(new CreateStoryCommand(
+		StoryDetailView created = storyCommandUseCase.create(CreateStoryCommandFactory.basic(
 				UUID.randomUUID(),
-				null,
-				false,
 				"MySQL 스토리",
 				"Testcontainers 본문",
 				"https://img.example/cover.png",
-				LocalDate.of(2026, 8, 1),
-				LocalDate.of(2026, 8, 5),
-				true,
 				VisibilityScope.ALL
 		));
 

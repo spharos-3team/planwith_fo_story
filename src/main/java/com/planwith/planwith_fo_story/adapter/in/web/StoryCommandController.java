@@ -21,7 +21,6 @@ import com.planwith.planwith_fo_story.adapter.in.web.dto.CreateStoryRequest;
 import com.planwith.planwith_fo_story.adapter.in.web.dto.UpdateStoryRequest;
 import com.planwith.planwith_fo_story.application.command.ChangeStoryCommentEnabledCommand;
 import com.planwith.planwith_fo_story.application.command.ChangeStoryVisibilityCommand;
-import com.planwith.planwith_fo_story.application.command.CreateStoryCommand;
 import com.planwith.planwith_fo_story.application.command.DeleteStoryCommand;
 import com.planwith.planwith_fo_story.application.command.UpdateStoryCommand;
 import com.planwith.planwith_fo_story.application.port.in.StoryCommandUseCase;
@@ -50,18 +49,8 @@ public class StoryCommandController {
 			@Valid @RequestBody CreateStoryRequest request
 	) {
 		log.info("StoryCommandController : POST create : 스토리 생성 요청");
-		return ResponseEntity.status(HttpStatus.CREATED).body(storyCommandUseCase.create(new CreateStoryCommand(
-				requireActor(actorUuid),
-				request.scheduleUuid(),
-				request.resolvedScheduleVisible(),
-				request.title(),
-				request.content(),
-				request.coverImageUrl(),
-				request.startDate(),
-				request.endDate(),
-				request.commentEnabled(),
-				request.visibilityScope()
-		)));
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(storyCommandUseCase.create(request.toCommand(requireActor(actorUuid))));
 	}
 
 	// 스토리 수정
