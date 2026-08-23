@@ -12,8 +12,6 @@ import jakarta.validation.constraints.Size;
 
 @Schema(description = "스토리 생성 요청")
 public record CreateStoryRequest(
-		@NotNull(message = "회원 UUID는 필수입니다.")
-		UUID memberUuid,
 		UUID scheduleUuid,
 		Boolean scheduleVisible,
 		@NotBlank(message = "제목은 필수입니다.")
@@ -28,18 +26,12 @@ public record CreateStoryRequest(
 		LocalDate startDate,
 		@NotNull(message = "여행 종료일은 필수입니다.")
 		LocalDate endDate,
+		@NotNull(message = "댓글 허용 여부는 필수입니다.")
 		Boolean commentEnabled,
+		@NotNull(message = "공개범위는 필수입니다.")
 		VisibilityScope visibilityScope
 ) {
-	public boolean resolvedCommentEnabled() {
-		return commentEnabled == null || commentEnabled;
-	}
-
 	public boolean resolvedScheduleVisible() {
 		return Boolean.TRUE.equals(scheduleVisible);
-	}
-
-	public VisibilityScope resolvedVisibilityScope() {
-		return visibilityScope == null ? VisibilityScope.ALL : visibilityScope;
 	}
 }
