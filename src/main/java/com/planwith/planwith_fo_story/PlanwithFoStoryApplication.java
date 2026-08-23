@@ -9,6 +9,7 @@ import com.planwith.planwith_fo_story.config.AuthProperties;
 import com.planwith.planwith_fo_story.config.DeployProperties;
 import com.planwith.planwith_fo_story.config.StoryCacheProperties;
 import com.planwith.planwith_fo_story.config.StoryKafkaProperties;
+import com.planwith.planwith_fo_story.config.StoryFeedProperties;
 import com.planwith.planwith_fo_story.config.StoryOutboxProperties;
 import com.planwith.planwith_fo_story.config.StoryOpenAiProperties;
 import com.planwith.planwith_fo_story.config.StoryScheduleProperties;
@@ -20,6 +21,7 @@ import com.planwith.planwith_fo_story.composition.config.StoryDetailScreenProper
 		AuthProperties.class,
 		DeployProperties.class,
 		StoryCacheProperties.class,
+		StoryFeedProperties.class,
 		StoryKafkaProperties.class,
 		StoryOutboxProperties.class,
 		StoryOpenAiProperties.class,

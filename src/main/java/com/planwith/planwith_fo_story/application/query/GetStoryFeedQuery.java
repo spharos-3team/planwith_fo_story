@@ -5,8 +5,19 @@ import java.util.UUID;
 public record GetStoryFeedQuery(
 		UUID viewerUuid,
 		int page,
-		int size
+		int size,
+		StorySortType sort,
+		StoryFeedType feedType
 ) {
+	public GetStoryFeedQuery(UUID viewerUuid, int page, int size) {
+		this(viewerUuid, page, size, StorySortType.LATEST, StoryFeedType.FOLLOWING);
+	}
+
+	public GetStoryFeedQuery {
+		sort = sort == null ? StorySortType.LATEST : sort;
+		feedType = feedType == null ? StoryFeedType.FOLLOWING : feedType;
+	}
+
 	public int offset() {
 		return Math.max(0, page) * resolvedSize();
 	}

@@ -6,8 +6,17 @@ public record GetStoryListQuery(
 		UUID authorUuid,
 		UUID viewerUuid,
 		int page,
-		int size
+		int size,
+		StorySortType sort
 ) {
+	public GetStoryListQuery(UUID authorUuid, UUID viewerUuid, int page, int size) {
+		this(authorUuid, viewerUuid, page, size, StorySortType.LATEST);
+	}
+
+	public GetStoryListQuery {
+		sort = sort == null ? StorySortType.LATEST : sort;
+	}
+
 	public int offset() {
 		return Math.max(0, page) * resolvedSize();
 	}

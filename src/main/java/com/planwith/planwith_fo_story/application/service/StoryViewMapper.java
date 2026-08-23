@@ -62,6 +62,10 @@ final class StoryViewMapper {
 				story.title(),
 				story.coverImageUrl(),
 				story.visitCountries().stream().map(country -> country.countryName()).toList(),
+				story.visitCountries().stream()
+						.flatMap(country -> country.cities().stream())
+						.map(city -> city.cityName())
+						.toList(),
 				story.visibilityScope(),
 				story.viewCount(),
 				story.storyLikeCount(),

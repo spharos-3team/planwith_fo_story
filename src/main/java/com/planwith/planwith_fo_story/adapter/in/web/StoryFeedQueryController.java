@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.planwith.planwith_fo_story.adapter.in.web.dto.StoryListResponse;
 import com.planwith.planwith_fo_story.application.port.in.StoryQueryUseCase;
 import com.planwith.planwith_fo_story.application.query.GetStoryFeedQuery;
-import com.planwith.planwith_fo_story.application.query.StoryFeedView;
+import com.planwith.planwith_fo_story.application.query.StoryFeedType;
+import com.planwith.planwith_fo_story.application.query.StorySortType;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,12 +32,16 @@ public class StoryFeedQueryController {
 
 	// 스토리 피드 조회
 	@GetMapping
-	public ResponseEntity<StoryFeedView> getFeed(
+	public ResponseEntity<StoryListResponse> getFeed(
 			@RequestHeader(value = "X-Member-UUID", required = false) UUID viewerUuid,
 			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(defaultValue = "LATEST") StorySortType sort,
+			@RequestParam(defaultValue = "FOLLOWING") StoryFeedType feedType
 	) {
 		log.info("StoryFeedQueryController : GET getFeed : 스토리 피드 조회 요청");
-		return ResponseEntity.ok(storyQueryUseCase.getFeed(new GetStoryFeedQuery(viewerUuid, page, size)));
+		return ResponseEntity.ok(StoryListResponse.from(
+				storyQueryUseCase.getFeed(new GetStoryFeedQuery(viewerUuid, page, size, sort, feedType))
+		));
 	}
 }

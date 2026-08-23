@@ -134,6 +134,15 @@ story:
       query-enabled: ${STORY_DETAIL_SCREEN_COMMENT_QUERY_ENABLED:false}
       base-url: ${COMMENT_SERVICE_URL:}
       list-path: ${STORY_DETAIL_SCREEN_COMMENT_LIST_PATH:/api/stories/{storyUuid}/comments}
+  feed:
+    member-query-enabled: ${STORY_FEED_MEMBER_QUERY_ENABLED:false}
+    member-base-url: ${MEMBER_SERVICE_URL:}
+    followings-path: ${STORY_FEED_FOLLOWINGS_PATH:/api/v1/members/{memberUuid}/followings}
+    members-path: ${STORY_FEED_MEMBERS_PATH:/api/v1/members/search}
+    membership-query-enabled: ${STORY_FEED_MEMBERSHIP_QUERY_ENABLED:false}
+    membership-base-url: ${MEMBERSHIP_SERVICE_URL:}
+    joined-memberships-path: ${STORY_FEED_JOINED_MEMBERSHIPS_PATH:/api/planwith-fo-membership/memberships/me/subscriptions}
+    eligible-grades: ${STORY_FEED_ELIGIBLE_GRADES:ADVENTURE,PLANWITH}
   cache:
     key-prefix: ${STORY_CACHE_KEY_PREFIX:story}
     detail-namespace: ${STORY_CACHE_DETAIL_NAMESPACE:detail}
