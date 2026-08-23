@@ -244,6 +244,11 @@ class StoryJpaEntity {
 		this.deletedAt = deletedAt;
 	}
 
+	void applyAiModerationStatus(AiModerationStatus aiModerationStatus, LocalDateTime updatedAt) {
+		this.aiModerationStatus = aiModerationStatus;
+		this.updatedAt = updatedAt;
+	}
+
 	void applyLikeCount(long storyLikeCount) {
 		this.storyLikeCount = storyLikeCount;
 	}

@@ -1,5 +1,6 @@
 package com.planwith.planwith_fo_story.adapter.out.persistence.story;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.planwith.planwith_fo_story.application.port.out.StoryCommandPort;
+import com.planwith.planwith_fo_story.domain.model.AiModerationStatus;
 import com.planwith.planwith_fo_story.domain.model.Story;
 
 import lombok.RequiredArgsConstructor;
@@ -35,5 +37,16 @@ public class StoryCommandPersistenceAdapter implements StoryCommandPort {
 	@Transactional(readOnly = true)
 	public Optional<Story> findByStoryUuid(UUID storyUuid) {
 		return storyRepository.findByStoryUuid(storyUuid).map(StoryPersistenceMapper::toDomain);
+	}
+
+	@Override
+	@Transactional
+	public Optional<Story> updateAiModerationStatus(UUID storyUuid, AiModerationStatus status, LocalDateTime updatedAt) {
+		return storyRepository.findByStoryUuid(storyUuid)
+				.filter(entity -> entity.deletedAt() == null)
+				.map(entity -> {
+					entity.applyAiModerationStatus(status, updatedAt);
+					return StoryPersistenceMapper.toDomain(storyRepository.save(entity));
+				});
 	}
 }

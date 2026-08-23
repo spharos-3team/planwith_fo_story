@@ -37,5 +37,7 @@ story:
     consumer-enabled: false
   outbox:
     enabled: false
+  openai:
+    enabled: false
   schedule:
     ownership-check-enabled: false

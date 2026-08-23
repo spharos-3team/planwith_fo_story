@@ -30,6 +30,7 @@ public class StoryKafkaProperties {
 		private String likeRemoved = "planwith.like.removed";
 		private String membershipSubscribed = "planwith.membership.subscribed";
 		private String membershipCanceled = "planwith.membership.canceled";
+		private String tokenUsage = "planwith.token.usage";
 		private String storyCreated = "planwith.story.created";
 		private String storyUpdated = "planwith.story.updated";
 		private String storyDeleted = "planwith.story.deleted";
@@ -72,6 +73,14 @@ public class StoryKafkaProperties {
 
 		public void setMembershipCanceled(String membershipCanceled) {
 			this.membershipCanceled = membershipCanceled;
+		}
+
+		public String getTokenUsage() {
+			return tokenUsage;
+		}
+
+		public void setTokenUsage(String tokenUsage) {
+			this.tokenUsage = tokenUsage;
 		}
 
 		public String getStoryCreated() {

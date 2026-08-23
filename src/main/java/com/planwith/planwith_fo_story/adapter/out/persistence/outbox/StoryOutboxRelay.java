@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.planwith.planwith_fo_story.application.event.StoryAiUsageRecordedEvent;
 import com.planwith.planwith_fo_story.application.event.StoryCreatedEvent;
 import com.planwith.planwith_fo_story.application.event.StoryDeletedEvent;
 import com.planwith.planwith_fo_story.application.event.StoryUpdatedEvent;
@@ -101,6 +102,9 @@ public class StoryOutboxRelay {
 	}
 
 	private String topicFor(String eventType) {
+		if (StoryAiUsageRecordedEvent.EVENT_TYPE.equals(eventType)) {
+			return kafkaProperties.getTopics().getTokenUsage();
+		}
 		if (StoryUpdatedEvent.EVENT_TYPE.equals(eventType)) {
 			return kafkaProperties.getTopics().getStoryUpdated();
 		}
