@@ -15,15 +15,18 @@ import com.planwith.planwith_fo_story.application.port.out.MemberProfileProjecti
 import com.planwith.planwith_fo_story.application.port.out.MembershipEntitlementProjectionPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryFeedMemberQueryPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryFeedMembershipQueryPort;
+import com.planwith.planwith_fo_story.application.port.out.StoryNicknameSearchPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryQueryCachePort;
 import com.planwith.planwith_fo_story.application.port.out.StoryQueryPort;
 import com.planwith.planwith_fo_story.application.query.GetStoryDetailQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryFeedQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryListQuery;
+import com.planwith.planwith_fo_story.application.query.SearchStoryQuery;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
 import com.planwith.planwith_fo_story.application.query.StoryFeedType;
 import com.planwith.planwith_fo_story.application.query.StoryFeedView;
 import com.planwith.planwith_fo_story.application.query.StoryListView;
+import com.planwith.planwith_fo_story.application.query.StorySearchType;
 import com.planwith.planwith_fo_story.application.query.StorySortType;
 import com.planwith.planwith_fo_story.application.query.StorySummaryView;
 import com.planwith.planwith_fo_story.domain.exception.StoryAccessDeniedException;
@@ -51,6 +54,7 @@ public class StoryQueryService implements StoryQueryUseCase {
 	private final MembershipEntitlementProjectionPort membershipEntitlementProjectionPort;
 	private final StoryFeedMemberQueryPort storyFeedMemberQueryPort;
 	private final StoryFeedMembershipQueryPort storyFeedMembershipQueryPort;
+	private final StoryNicknameSearchPort storyNicknameSearchPort;
 	private final StoryAccessPolicy accessPolicy;
 	private final StorySchedulePolicy schedulePolicy;
 
@@ -60,7 +64,8 @@ public class StoryQueryService implements StoryQueryUseCase {
 			MemberProfileProjectionPort memberProfileProjectionPort,
 			MembershipEntitlementProjectionPort membershipEntitlementProjectionPort,
 			StoryFeedMemberQueryPort storyFeedMemberQueryPort,
-			StoryFeedMembershipQueryPort storyFeedMembershipQueryPort
+			StoryFeedMembershipQueryPort storyFeedMembershipQueryPort,
+			StoryNicknameSearchPort storyNicknameSearchPort
 	) {
 		this.storyQueryPort = storyQueryPort;
 		this.storyQueryCachePort = storyQueryCachePort;
@@ -68,6 +73,7 @@ public class StoryQueryService implements StoryQueryUseCase {
 		this.membershipEntitlementProjectionPort = membershipEntitlementProjectionPort;
 		this.storyFeedMemberQueryPort = storyFeedMemberQueryPort;
 		this.storyFeedMembershipQueryPort = storyFeedMembershipQueryPort;
+		this.storyNicknameSearchPort = storyNicknameSearchPort;
 		this.accessPolicy = new StoryAccessPolicy();
 		this.schedulePolicy = new StorySchedulePolicy();
 	}
@@ -120,6 +126,26 @@ public class StoryQueryService implements StoryQueryUseCase {
 		return new StoryFeedView(items, Math.max(0, query.page()), query.resolvedSize());
 	}
 
+	@Override
+	public StoryListView search(SearchStoryQuery query) {
+		Set<UUID> authors = query.type() == StorySearchType.NICKNAME
+				? storyNicknameSearchPort.findMemberUuidsByNickname(query.keyword())
+				: null;
+		if (authors != null && authors.isEmpty()) {
+			return new StoryListView(List.of(), Math.max(0, query.page()), query.resolvedSize());
+		}
+		List<Story> stories = findReadableStories(
+				query.offset(),
+				query.resolvedSize(),
+				story -> true,
+				(queryOffset, batchSize) -> query.type() == StorySearchType.NICKNAME
+						? storyQueryPort.findActive(authors, StorySortType.LATEST, queryOffset, batchSize)
+						: storyQueryPort.searchActive(query.type(), query.keyword(), queryOffset, batchSize),
+				query.viewerUuid()
+		);
+		return new StoryListView(toSummaries(stories), Math.max(0, query.page()), query.resolvedSize());
+	}
+
 	private Set<UUID> resolveFeedAuthors(StoryFeedType feedType, UUID viewerUuid) {
 		if (feedType == StoryFeedType.FOLLOWING) {
 			return storyFeedMemberQueryPort.findEligibleFollowingAuthors(viewerUuid).orElse(null);
@@ -142,13 +168,29 @@ public class StoryQueryService implements StoryQueryUseCase {
 		if (authors != null && authors.isEmpty()) {
 			return List.of();
 		}
+		return findReadableStories(
+				offset,
+				size,
+				feedCondition,
+				(queryOffset, batchSize) -> storyQueryPort.findActive(authors, sort, queryOffset, batchSize),
+				viewerUuid
+		);
+	}
+
+	private List<Story> findReadableStories(
+			int offset,
+			int size,
+			Predicate<Story> condition,
+			StoryPageLoader pageLoader,
+			UUID viewerUuid
+	) {
 		int required = offset + size;
 		int queryOffset = 0;
 		List<Story> readable = new ArrayList<>(required);
 		while (readable.size() < required) {
-			List<Story> candidates = storyQueryPort.findActive(authors, sort, queryOffset, QUERY_BATCH_SIZE);
+			List<Story> candidates = pageLoader.load(queryOffset, QUERY_BATCH_SIZE);
 			for (Story story : candidates) {
-				if (feedCondition.test(story) && canRead(story, viewerUuid)) {
+				if (condition.test(story) && canRead(story, viewerUuid)) {
 					readable.add(story);
 				}
 			}
@@ -161,6 +203,12 @@ public class StoryQueryService implements StoryQueryUseCase {
 			return List.of();
 		}
 		return List.copyOf(readable.subList(offset, Math.min(required, readable.size())));
+	}
+
+	@FunctionalInterface
+	private interface StoryPageLoader {
+
+		List<Story> load(int offset, int size);
 	}
 
 	private boolean canRead(Story story, UUID viewerUuid) {

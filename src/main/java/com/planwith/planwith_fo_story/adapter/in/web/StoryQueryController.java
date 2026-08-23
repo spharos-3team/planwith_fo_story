@@ -16,9 +16,15 @@ import com.planwith.planwith_fo_story.adapter.in.web.dto.StoryListResponse;
 import com.planwith.planwith_fo_story.application.port.in.StoryQueryUseCase;
 import com.planwith.planwith_fo_story.application.query.GetStoryDetailQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryListQuery;
+import com.planwith.planwith_fo_story.application.query.SearchStoryQuery;
+import com.planwith.planwith_fo_story.application.query.StorySearchType;
 import com.planwith.planwith_fo_story.application.query.StorySortType;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,6 +62,20 @@ public class StoryQueryController {
 		log.info("StoryQueryController : GET getList : 스토리 목록 조회 요청");
 		return ResponseEntity.ok(StoryListResponse.from(
 				storyQueryUseCase.getList(new GetStoryListQuery(authorUuid, viewerUuid, page, size, sort))
+		));
+	}
+
+	@GetMapping("/search")
+	public ResponseEntity<StoryListResponse> search(
+			@RequestHeader(value = "X-Member-UUID", required = false) UUID viewerUuid,
+			@RequestParam StorySearchType type,
+			@RequestParam @NotBlank @Size(max = 100) String keyword,
+			@RequestParam(defaultValue = "0") @Min(0) int page,
+			@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+	) {
+		log.info("StoryQueryController : GET search : 스토리 검색 요청");
+		return ResponseEntity.ok(StoryListResponse.from(
+				storyQueryUseCase.search(new SearchStoryQuery(type, keyword, viewerUuid, page, size))
 		));
 	}
 
