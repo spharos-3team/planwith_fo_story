@@ -3,6 +3,7 @@ package com.planwith.planwith_fo_story.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -48,14 +49,12 @@ class StoryCommandOutboxIntegrationTest {
 		StoryDetailView created = storyCommandUseCase.create(new CreateStoryCommand(
 				memberUuid,
 				null,
+				false,
 				"첫 스토리",
 				"본문입니다.",
-				null,
-				"Korea",
-				"Seoul",
-				null,
-				null,
-				null,
+				"https://img.example/cover.png",
+				LocalDate.of(2026, 8, 1),
+				LocalDate.of(2026, 8, 5),
 				true,
 				VisibilityScope.ALL
 		));
@@ -78,14 +77,12 @@ class StoryCommandOutboxIntegrationTest {
 		assertThatThrownBy(() -> storyCommandUseCase.create(new CreateStoryCommand(
 				memberUuid,
 				null,
+				false,
 				" ",
 				"본문입니다.",
-				null,
-				null,
-				null,
-				null,
-				null,
-				null,
+				"https://img.example/cover.png",
+				LocalDate.of(2026, 8, 1),
+				LocalDate.of(2026, 8, 5),
 				true,
 				VisibilityScope.ALL
 		))).isInstanceOf(InvalidStoryStateException.class);

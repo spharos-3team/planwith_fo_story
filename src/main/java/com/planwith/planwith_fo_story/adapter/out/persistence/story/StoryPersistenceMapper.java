@@ -1,6 +1,12 @@
 package com.planwith.planwith_fo_story.adapter.out.persistence.story;
 
 import com.planwith.planwith_fo_story.domain.model.Story;
+import com.planwith.planwith_fo_story.domain.model.StoryPlace;
+import com.planwith.planwith_fo_story.domain.model.StoryPlaceImage;
+import com.planwith.planwith_fo_story.domain.model.StoryTag;
+import com.planwith.planwith_fo_story.domain.model.StoryVisibilityMember;
+import com.planwith.planwith_fo_story.domain.model.StoryVisitCity;
+import com.planwith.planwith_fo_story.domain.model.StoryVisitCountry;
 import com.planwith.planwith_fo_story.domain.model.vo.MemberUuid;
 import com.planwith.planwith_fo_story.domain.model.vo.StoryUuid;
 
@@ -15,20 +21,31 @@ final class StoryPersistenceMapper {
 				StoryUuid.of(entity.storyUuid()),
 				MemberUuid.of(entity.memberUuid()),
 				entity.scheduleUuid(),
+				entity.scheduleVisible(),
 				entity.title(),
 				entity.content(),
 				entity.coverImageUrl(),
-				entity.visitCountry(),
-				entity.visitCity(),
-				entity.visitPlace(),
 				entity.startDate(),
 				entity.endDate(),
 				entity.commentEnabled(),
 				entity.visibilityScope(),
 				entity.aiModerationStatus(),
+				entity.viewCount(),
 				entity.storyLikeCount(),
+				entity.storyCommentCount(),
 				entity.createdAt(),
-				entity.deletedAt()
+				entity.updatedAt(),
+				entity.deletedAt(),
+				entity.visitCountries().stream().map(StoryPersistenceMapper::toCountry).toList(),
+				entity.places().stream().map(StoryPersistenceMapper::toPlace).toList(),
+				entity.tags().stream().map(tag -> StoryTag.restore(tag.storyTagId(), tag.tagName())).toList(),
+				entity.visibilityMembers().stream()
+						.map(member -> StoryVisibilityMember.restore(
+								member.storyVisibilityMemberId(),
+								MemberUuid.of(member.memberUuid()),
+								member.createdAt()
+						))
+						.toList()
 		);
 	}
 
@@ -38,19 +55,98 @@ final class StoryPersistenceMapper {
 		}
 		entity.apply(
 				story.scheduleUuid(),
+				story.scheduleVisible(),
 				story.title(),
 				story.content(),
 				story.coverImageUrl(),
-				story.visitCountry(),
-				story.visitCity(),
-				story.visitPlace(),
 				story.startDate(),
 				story.endDate(),
 				story.commentEnabled(),
 				story.visibilityScope(),
 				story.aiModerationStatus(),
+				story.viewCount(),
 				story.storyLikeCount(),
+				story.storyCommentCount(),
+				story.updatedAt(),
 				story.deletedAt()
 		);
+		entity.replaceVisitCountries(story.visitCountries().stream()
+				.map(country -> toCountryEntity(entity, country))
+				.toList());
+		entity.replacePlaces(story.places().stream()
+				.map(place -> toPlaceEntity(entity, place))
+				.toList());
+		entity.replaceTags(story.tags().stream()
+				.map(tag -> new StoryTagJpaEntity(entity, tag.tagName()))
+				.toList());
+		entity.replaceVisibilityMembers(story.visibilityMembers().stream()
+				.map(member -> new StoryVisibilityMemberJpaEntity(
+						entity,
+						member.memberUuid().value(),
+						member.createdAt()
+				))
+				.toList());
+	}
+
+	private static StoryVisitCountry toCountry(StoryVisitCountryJpaEntity entity) {
+		return StoryVisitCountry.restore(
+				entity.storyVisitCountryId(),
+				entity.countryName(),
+				entity.displayOrder(),
+				entity.cities().stream()
+						.map(city -> StoryVisitCity.restore(
+								city.storyVisitCityId(),
+								city.cityName(),
+								city.displayOrder()
+						))
+						.toList()
+		);
+	}
+
+	private static StoryPlace toPlace(StoryPlaceJpaEntity entity) {
+		return StoryPlace.restore(
+				entity.storyPlaceId(),
+				entity.storyVisitCityId(),
+				entity.placeName(),
+				entity.displayOrder(),
+				entity.images().stream()
+						.map(image -> StoryPlaceImage.restore(
+								image.storyPlaceImageId(),
+								image.imageUrl(),
+								image.imageOrder(),
+								image.createdAt()
+						))
+						.toList()
+		);
+	}
+
+	private static StoryVisitCountryJpaEntity toCountryEntity(StoryJpaEntity story, StoryVisitCountry country) {
+		StoryVisitCountryJpaEntity entity = new StoryVisitCountryJpaEntity(
+				story,
+				country.countryName(),
+				country.displayOrder()
+		);
+		entity.replaceCities(country.cities().stream()
+				.map(city -> new StoryVisitCityJpaEntity(entity, city.cityName(), city.displayOrder()))
+				.toList());
+		return entity;
+	}
+
+	private static StoryPlaceJpaEntity toPlaceEntity(StoryJpaEntity story, StoryPlace place) {
+		StoryPlaceJpaEntity entity = new StoryPlaceJpaEntity(
+				story,
+				place.storyVisitCityId(),
+				place.placeName(),
+				place.displayOrder()
+		);
+		entity.replaceImages(place.images().stream()
+				.map(image -> new StoryPlaceImageJpaEntity(
+						entity,
+						image.imageUrl(),
+						image.imageOrder(),
+						image.createdAt()
+				))
+				.toList());
+		return entity;
 	}
 }

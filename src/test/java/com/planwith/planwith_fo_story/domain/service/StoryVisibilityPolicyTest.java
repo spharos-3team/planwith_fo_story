@@ -2,6 +2,7 @@ package com.planwith.planwith_fo_story.domain.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -38,14 +39,12 @@ class StoryVisibilityPolicyTest {
 				StoryUuid.generate(),
 				author,
 				null,
+				false,
 				"제목",
 				"본문",
-				null,
-				null,
-				null,
-				null,
-				null,
-				null,
+				"https://img.example/cover.png",
+				LocalDate.of(2026, 8, 1),
+				LocalDate.of(2026, 8, 5),
 				true,
 				visibilityScope,
 				LocalDateTime.of(2026, 8, 23, 11, 0)

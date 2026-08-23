@@ -55,12 +55,10 @@ public class StoryCommandService implements StoryCommandUseCase {
 				StoryUuid.generate(),
 				MemberUuid.of(command.memberUuid()),
 				command.scheduleUuid(),
+				command.scheduleVisible(),
 				command.title(),
 				command.content(),
 				command.coverImageUrl(),
-				command.visitCountry(),
-				command.visitCity(),
-				command.visitPlace(),
 				command.startDate(),
 				command.endDate(),
 				command.commentEnabled(),
@@ -83,16 +81,17 @@ public class StoryCommandService implements StoryCommandUseCase {
 	@Transactional
 	public StoryDetailView update(UpdateStoryCommand command) {
 		log.info("StoryCommandService : update : 스토리 수정 비즈니스 로직 시작 - storyUuid={}", command.storyUuid());
+		LocalDateTime now = LocalDateTime.now(clock);
 		Story updated = loadActive(command.storyUuid()).update(
 				MemberUuid.of(command.actorUuid()),
+				command.scheduleUuid(),
+				command.scheduleVisible(),
 				command.title(),
 				command.content(),
 				command.coverImageUrl(),
-				command.visitCountry(),
-				command.visitCity(),
-				command.visitPlace(),
 				command.startDate(),
-				command.endDate()
+				command.endDate(),
+				now
 		);
 		Story saved = storyCommandPort.save(updated);
 		appendOutbox(StoryUpdatedEvent.EVENT_TYPE, StoryUpdatedEvent.of(
@@ -128,7 +127,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	public StoryDetailView changeVisibility(ChangeStoryVisibilityCommand command) {
 		log.info("StoryCommandService : changeVisibility : 스토리 공개범위 변경 시작 - storyUuid={}", command.storyUuid());
 		Story changed = loadActive(command.storyUuid())
-				.changeVisibility(MemberUuid.of(command.actorUuid()), command.visibilityScope());
+				.changeVisibility(MemberUuid.of(command.actorUuid()), command.visibilityScope(), LocalDateTime.now(clock));
 		Story saved = storyCommandPort.save(changed);
 		appendOutbox(StoryUpdatedEvent.EVENT_TYPE, StoryUpdatedEvent.of(
 				UUID.randomUUID().toString(),
@@ -146,7 +145,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	public StoryDetailView changeCommentEnabled(ChangeStoryCommentEnabledCommand command) {
 		log.info("StoryCommandService : changeCommentEnabled : 스토리 댓글 허용 변경 시작 - storyUuid={}", command.storyUuid());
 		Story changed = loadActive(command.storyUuid())
-				.changeCommentEnabled(MemberUuid.of(command.actorUuid()), command.commentEnabled());
+				.changeCommentEnabled(MemberUuid.of(command.actorUuid()), command.commentEnabled(), LocalDateTime.now(clock));
 		Story saved = storyCommandPort.save(changed);
 		appendOutbox(StoryUpdatedEvent.EVENT_TYPE, StoryUpdatedEvent.of(
 				UUID.randomUUID().toString(),

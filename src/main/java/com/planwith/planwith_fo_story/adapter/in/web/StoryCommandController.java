@@ -50,12 +50,10 @@ public class StoryCommandController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(storyCommandUseCase.create(new CreateStoryCommand(
 				request.memberUuid(),
 				request.scheduleUuid(),
+				request.resolvedScheduleVisible(),
 				request.title(),
 				request.content(),
 				request.coverImageUrl(),
-				request.visitCountry(),
-				request.visitCity(),
-				request.visitPlace(),
 				request.startDate(),
 				request.endDate(),
 				request.resolvedCommentEnabled(),
@@ -74,12 +72,11 @@ public class StoryCommandController {
 		return ResponseEntity.ok(storyCommandUseCase.update(new UpdateStoryCommand(
 				requireActor(actorUuid),
 				storyUuid,
+				request.scheduleUuid(),
+				request.resolvedScheduleVisible(),
 				request.title(),
 				request.content(),
 				request.coverImageUrl(),
-				request.visitCountry(),
-				request.visitCity(),
-				request.visitPlace(),
 				request.startDate(),
 				request.endDate()
 		)));

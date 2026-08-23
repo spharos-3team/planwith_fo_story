@@ -15,26 +15,28 @@ public record CreateStoryRequest(
 		@NotNull(message = "회원 UUID는 필수입니다.")
 		UUID memberUuid,
 		UUID scheduleUuid,
+		Boolean scheduleVisible,
 		@NotBlank(message = "제목은 필수입니다.")
 		@Size(max = 200, message = "제목은 200자를 초과할 수 없습니다.")
 		String title,
 		@NotBlank(message = "본문은 필수입니다.")
 		String content,
+		@NotBlank(message = "커버 이미지 URL은 필수입니다.")
 		@Size(max = 500, message = "커버 이미지 URL은 500자를 초과할 수 없습니다.")
 		String coverImageUrl,
-		@Size(max = 100, message = "방문 국가는 100자를 초과할 수 없습니다.")
-		String visitCountry,
-		@Size(max = 100, message = "방문 도시는 100자를 초과할 수 없습니다.")
-		String visitCity,
-		@Size(max = 255, message = "방문 장소는 255자를 초과할 수 없습니다.")
-		String visitPlace,
+		@NotNull(message = "여행 시작일은 필수입니다.")
 		LocalDate startDate,
+		@NotNull(message = "여행 종료일은 필수입니다.")
 		LocalDate endDate,
 		Boolean commentEnabled,
 		VisibilityScope visibilityScope
 ) {
 	public boolean resolvedCommentEnabled() {
 		return commentEnabled == null || commentEnabled;
+	}
+
+	public boolean resolvedScheduleVisible() {
+		return Boolean.TRUE.equals(scheduleVisible);
 	}
 
 	public VisibilityScope resolvedVisibilityScope() {

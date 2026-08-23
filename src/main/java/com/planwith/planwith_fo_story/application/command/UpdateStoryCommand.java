@@ -6,12 +6,11 @@ import java.util.UUID;
 public record UpdateStoryCommand(
 		UUID actorUuid,
 		UUID storyUuid,
+		UUID scheduleUuid,
+		boolean scheduleVisible,
 		String title,
 		String content,
 		String coverImageUrl,
-		String visitCountry,
-		String visitCity,
-		String visitPlace,
 		LocalDate startDate,
 		LocalDate endDate
 ) {

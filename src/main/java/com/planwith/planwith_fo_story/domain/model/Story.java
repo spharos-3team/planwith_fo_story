@@ -2,6 +2,7 @@ package com.planwith.planwith_fo_story.domain.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -14,80 +15,90 @@ public final class Story {
 
 	private static final int TITLE_MAX_LENGTH = 200;
 	private static final int COVER_IMAGE_MAX_LENGTH = 500;
-	private static final int VISIT_COUNTRY_MAX_LENGTH = 100;
-	private static final int VISIT_CITY_MAX_LENGTH = 100;
-	private static final int VISIT_PLACE_MAX_LENGTH = 255;
 
 	private final Long storyId;
 	private final StoryUuid storyUuid;
 	private final MemberUuid memberUuid;
 	private final UUID scheduleUuid;
+	private final boolean scheduleVisible;
 	private final String title;
 	private final String content;
 	private final String coverImageUrl;
-	private final String visitCountry;
-	private final String visitCity;
-	private final String visitPlace;
 	private final LocalDate startDate;
 	private final LocalDate endDate;
 	private final boolean commentEnabled;
 	private final VisibilityScope visibilityScope;
 	private final AiModerationStatus aiModerationStatus;
+	private final long viewCount;
 	private final long storyLikeCount;
+	private final long storyCommentCount;
 	private final LocalDateTime createdAt;
+	private final LocalDateTime updatedAt;
 	private final LocalDateTime deletedAt;
+	private final List<StoryVisitCountry> visitCountries;
+	private final List<StoryPlace> places;
+	private final List<StoryTag> tags;
+	private final List<StoryVisibilityMember> visibilityMembers;
 
 	private Story(
 			Long storyId,
 			StoryUuid storyUuid,
 			MemberUuid memberUuid,
 			UUID scheduleUuid,
+			boolean scheduleVisible,
 			String title,
 			String content,
 			String coverImageUrl,
-			String visitCountry,
-			String visitCity,
-			String visitPlace,
 			LocalDate startDate,
 			LocalDate endDate,
 			boolean commentEnabled,
 			VisibilityScope visibilityScope,
 			AiModerationStatus aiModerationStatus,
+			long viewCount,
 			long storyLikeCount,
+			long storyCommentCount,
 			LocalDateTime createdAt,
-			LocalDateTime deletedAt
+			LocalDateTime updatedAt,
+			LocalDateTime deletedAt,
+			List<StoryVisitCountry> visitCountries,
+			List<StoryPlace> places,
+			List<StoryTag> tags,
+			List<StoryVisibilityMember> visibilityMembers
 	) {
 		this.storyId = storyId;
 		this.storyUuid = Objects.requireNonNull(storyUuid, "Story UUID is required.");
 		this.memberUuid = Objects.requireNonNull(memberUuid, "Member UUID is required.");
 		this.scheduleUuid = scheduleUuid;
+		this.scheduleVisible = scheduleVisible;
 		this.title = requireTitle(title);
 		this.content = requireContent(content);
-		this.coverImageUrl = optionalMax(coverImageUrl, COVER_IMAGE_MAX_LENGTH, "coverImageUrl");
-		this.visitCountry = optionalMax(visitCountry, VISIT_COUNTRY_MAX_LENGTH, "visitCountry");
-		this.visitCity = optionalMax(visitCity, VISIT_CITY_MAX_LENGTH, "visitCity");
-		this.visitPlace = optionalMax(visitPlace, VISIT_PLACE_MAX_LENGTH, "visitPlace");
-		this.startDate = startDate;
-		this.endDate = endDate;
+		this.coverImageUrl = requireCoverImageUrl(coverImageUrl);
+		this.startDate = Objects.requireNonNull(startDate, "여행 시작일은 필수입니다.");
+		this.endDate = Objects.requireNonNull(endDate, "여행 종료일은 필수입니다.");
 		this.commentEnabled = commentEnabled;
 		this.visibilityScope = Objects.requireNonNull(visibilityScope, "Visibility scope is required.");
 		this.aiModerationStatus = Objects.requireNonNull(aiModerationStatus, "AI moderation status is required.");
+		this.viewCount = Math.max(0L, viewCount);
 		this.storyLikeCount = Math.max(0L, storyLikeCount);
+		this.storyCommentCount = Math.max(0L, storyCommentCount);
 		this.createdAt = Objects.requireNonNull(createdAt, "Created at is required.");
+		this.updatedAt = Objects.requireNonNull(updatedAt, "Updated at is required.");
 		this.deletedAt = deletedAt;
-		validatePeriod(startDate, endDate);
+		this.visitCountries = List.copyOf(visitCountries == null ? List.of() : visitCountries);
+		this.places = List.copyOf(places == null ? List.of() : places);
+		this.tags = List.copyOf(tags == null ? List.of() : tags);
+		this.visibilityMembers = List.copyOf(visibilityMembers == null ? List.of() : visibilityMembers);
+		validatePeriod(this.startDate, this.endDate);
 	}
 
 	public static Story create(
 			StoryUuid storyUuid,
 			MemberUuid memberUuid,
 			UUID scheduleUuid,
+			boolean scheduleVisible,
 			String title,
 			String content,
 			String coverImageUrl,
-			String visitCountry,
-			String visitCity,
-			String visitPlace,
 			LocalDate startDate,
 			LocalDate endDate,
 			boolean commentEnabled,
@@ -99,20 +110,25 @@ public final class Story {
 				storyUuid,
 				memberUuid,
 				scheduleUuid,
+				scheduleVisible,
 				title,
 				content,
 				coverImageUrl,
-				visitCountry,
-				visitCity,
-				visitPlace,
 				startDate,
 				endDate,
 				commentEnabled,
 				visibilityScope == null ? VisibilityScope.ALL : visibilityScope,
 				AiModerationStatus.UNVERIFIED,
 				0L,
+				0L,
+				0L,
 				createdAt,
-				null
+				createdAt,
+				null,
+				List.of(),
+				List.of(),
+				List.of(),
+				List.of()
 		);
 	}
 
@@ -121,104 +137,126 @@ public final class Story {
 			StoryUuid storyUuid,
 			MemberUuid memberUuid,
 			UUID scheduleUuid,
+			boolean scheduleVisible,
 			String title,
 			String content,
 			String coverImageUrl,
-			String visitCountry,
-			String visitCity,
-			String visitPlace,
 			LocalDate startDate,
 			LocalDate endDate,
 			boolean commentEnabled,
 			VisibilityScope visibilityScope,
 			AiModerationStatus aiModerationStatus,
+			long viewCount,
 			long storyLikeCount,
+			long storyCommentCount,
 			LocalDateTime createdAt,
-			LocalDateTime deletedAt
+			LocalDateTime updatedAt,
+			LocalDateTime deletedAt,
+			List<StoryVisitCountry> visitCountries,
+			List<StoryPlace> places,
+			List<StoryTag> tags,
+			List<StoryVisibilityMember> visibilityMembers
 	) {
 		return new Story(
 				storyId,
 				storyUuid,
 				memberUuid,
 				scheduleUuid,
+				scheduleVisible,
 				title,
 				content,
 				coverImageUrl,
-				visitCountry,
-				visitCity,
-				visitPlace,
 				startDate,
 				endDate,
 				commentEnabled,
 				visibilityScope,
 				aiModerationStatus,
+				viewCount,
 				storyLikeCount,
+				storyCommentCount,
 				createdAt,
-				deletedAt
+				updatedAt,
+				deletedAt,
+				visitCountries,
+				places,
+				tags,
+				visibilityMembers
 		);
 	}
 
 	public Story update(
 			MemberUuid actor,
+			UUID scheduleUuid,
+			boolean scheduleVisible,
 			String title,
 			String content,
 			String coverImageUrl,
-			String visitCountry,
-			String visitCity,
-			String visitPlace,
 			LocalDate startDate,
-			LocalDate endDate
+			LocalDate endDate,
+			LocalDateTime updatedAt
 	) {
 		ensureOwner(actor);
 		ensureActive();
 		return copy(
+				scheduleUuid,
+				scheduleVisible,
 				title,
 				content,
 				coverImageUrl,
-				visitCountry,
-				visitCity,
-				visitPlace,
 				startDate,
 				endDate,
 				commentEnabled,
 				visibilityScope,
-				deletedAt
+				updatedAt,
+				deletedAt,
+				visitCountries,
+				places,
+				tags,
+				visibilityMembers
 		);
 	}
 
-	public Story changeVisibility(MemberUuid actor, VisibilityScope visibilityScope) {
+	public Story changeVisibility(MemberUuid actor, VisibilityScope visibilityScope, LocalDateTime updatedAt) {
 		ensureOwner(actor);
 		ensureActive();
 		return copy(
+				scheduleUuid,
+				scheduleVisible,
 				title,
 				content,
 				coverImageUrl,
-				visitCountry,
-				visitCity,
-				visitPlace,
 				startDate,
 				endDate,
 				commentEnabled,
 				visibilityScope,
-				deletedAt
+				updatedAt,
+				deletedAt,
+				visitCountries,
+				places,
+				tags,
+				visibilityMembers
 		);
 	}
 
-	public Story changeCommentEnabled(MemberUuid actor, boolean commentEnabled) {
+	public Story changeCommentEnabled(MemberUuid actor, boolean commentEnabled, LocalDateTime updatedAt) {
 		ensureOwner(actor);
 		ensureActive();
 		return copy(
+				scheduleUuid,
+				scheduleVisible,
 				title,
 				content,
 				coverImageUrl,
-				visitCountry,
-				visitCity,
-				visitPlace,
 				startDate,
 				endDate,
 				commentEnabled,
 				visibilityScope,
-				deletedAt
+				updatedAt,
+				deletedAt,
+				visitCountries,
+				places,
+				tags,
+				visibilityMembers
 		);
 	}
 
@@ -226,40 +264,76 @@ public final class Story {
 		ensureOwner(actor);
 		ensureActive();
 		return copy(
+				scheduleUuid,
+				scheduleVisible,
 				title,
 				content,
 				coverImageUrl,
-				visitCountry,
-				visitCity,
-				visitPlace,
 				startDate,
 				endDate,
 				commentEnabled,
 				visibilityScope,
-				Objects.requireNonNull(deletedAt, "Deleted at is required.")
+				deletedAt,
+				deletedAt,
+				visitCountries,
+				places,
+				tags,
+				visibilityMembers
+		);
+	}
+
+	public Story replaceChildren(
+			List<StoryVisitCountry> visitCountries,
+			List<StoryPlace> places,
+			List<StoryTag> tags,
+			List<StoryVisibilityMember> visibilityMembers,
+			LocalDateTime updatedAt
+	) {
+		ensureActive();
+		return copy(
+				scheduleUuid,
+				scheduleVisible,
+				title,
+				content,
+				coverImageUrl,
+				startDate,
+				endDate,
+				commentEnabled,
+				visibilityScope,
+				updatedAt,
+				deletedAt,
+				visitCountries,
+				places,
+				tags,
+				visibilityMembers
 		);
 	}
 
 	public Story projectLikeCount(long storyLikeCount) {
-		return new Story(
+		return restore(
 				storyId,
 				storyUuid,
 				memberUuid,
 				scheduleUuid,
+				scheduleVisible,
 				title,
 				content,
 				coverImageUrl,
-				visitCountry,
-				visitCity,
-				visitPlace,
 				startDate,
 				endDate,
 				commentEnabled,
 				visibilityScope,
 				aiModerationStatus,
+				viewCount,
 				storyLikeCount,
+				storyCommentCount,
 				createdAt,
-				deletedAt
+				updatedAt,
+				deletedAt,
+				visitCountries,
+				places,
+				tags,
+				visibilityMembers
 		);
 	}
 
@@ -272,37 +346,46 @@ public final class Story {
 	}
 
 	private Story copy(
+			UUID scheduleUuid,
+			boolean scheduleVisible,
 			String title,
 			String content,
 			String coverImageUrl,
-			String visitCountry,
-			String visitCity,
-			String visitPlace,
 			LocalDate startDate,
 			LocalDate endDate,
 			boolean commentEnabled,
 			VisibilityScope visibilityScope,
-			LocalDateTime deletedAt
+			LocalDateTime updatedAt,
+			LocalDateTime deletedAt,
+			List<StoryVisitCountry> visitCountries,
+			List<StoryPlace> places,
+			List<StoryTag> tags,
+			List<StoryVisibilityMember> visibilityMembers
 	) {
 		return new Story(
 				storyId,
 				storyUuid,
 				memberUuid,
 				scheduleUuid,
+				scheduleVisible,
 				title,
 				content,
 				coverImageUrl,
-				visitCountry,
-				visitCity,
-				visitPlace,
 				startDate,
 				endDate,
 				commentEnabled,
 				visibilityScope,
 				aiModerationStatus,
+				viewCount,
 				storyLikeCount,
+				storyCommentCount,
 				createdAt,
-				deletedAt
+				updatedAt,
+				deletedAt,
+				visitCountries,
+				places,
+				tags,
+				visibilityMembers
 		);
 	}
 
@@ -336,19 +419,19 @@ public final class Story {
 		return content;
 	}
 
-	private static String optionalMax(String value, int maxLength, String fieldName) {
-		if (value == null || value.isBlank()) {
-			return null;
+	private static String requireCoverImageUrl(String coverImageUrl) {
+		if (coverImageUrl == null || coverImageUrl.isBlank()) {
+			throw new InvalidStoryStateException("커버 이미지 URL은 필수입니다.");
 		}
-		String trimmed = value.trim();
-		if (trimmed.length() > maxLength) {
-			throw new InvalidStoryStateException(fieldName + " 길이가 허용 범위를 초과했습니다.");
+		String trimmed = coverImageUrl.trim();
+		if (trimmed.length() > COVER_IMAGE_MAX_LENGTH) {
+			throw new InvalidStoryStateException("커버 이미지 URL은 500자를 초과할 수 없습니다.");
 		}
 		return trimmed;
 	}
 
 	private static void validatePeriod(LocalDate startDate, LocalDate endDate) {
-		if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+		if (endDate.isBefore(startDate)) {
 			throw new InvalidStoryStateException("여행 종료일은 시작일보다 빠를 수 없습니다.");
 		}
 	}
@@ -369,6 +452,10 @@ public final class Story {
 		return scheduleUuid;
 	}
 
+	public boolean scheduleVisible() {
+		return scheduleVisible;
+	}
+
 	public String title() {
 		return title;
 	}
@@ -379,18 +466,6 @@ public final class Story {
 
 	public String coverImageUrl() {
 		return coverImageUrl;
-	}
-
-	public String visitCountry() {
-		return visitCountry;
-	}
-
-	public String visitCity() {
-		return visitCity;
-	}
-
-	public String visitPlace() {
-		return visitPlace;
 	}
 
 	public LocalDate startDate() {
@@ -413,15 +488,43 @@ public final class Story {
 		return aiModerationStatus;
 	}
 
+	public long viewCount() {
+		return viewCount;
+	}
+
 	public long storyLikeCount() {
 		return storyLikeCount;
+	}
+
+	public long storyCommentCount() {
+		return storyCommentCount;
 	}
 
 	public LocalDateTime createdAt() {
 		return createdAt;
 	}
 
+	public LocalDateTime updatedAt() {
+		return updatedAt;
+	}
+
 	public LocalDateTime deletedAt() {
 		return deletedAt;
+	}
+
+	public List<StoryVisitCountry> visitCountries() {
+		return visitCountries;
+	}
+
+	public List<StoryPlace> places() {
+		return places;
+	}
+
+	public List<StoryTag> tags() {
+		return tags;
+	}
+
+	public List<StoryVisibilityMember> visibilityMembers() {
+		return visibilityMembers;
 	}
 }

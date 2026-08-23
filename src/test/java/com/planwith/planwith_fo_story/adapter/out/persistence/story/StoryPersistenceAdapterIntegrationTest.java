@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,11 @@ import com.planwith.planwith_fo_story.application.port.out.StoryCommandPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryQueryPort;
 import com.planwith.planwith_fo_story.domain.model.AiModerationStatus;
 import com.planwith.planwith_fo_story.domain.model.Story;
+import com.planwith.planwith_fo_story.domain.model.StoryPlace;
+import com.planwith.planwith_fo_story.domain.model.StoryPlaceImage;
+import com.planwith.planwith_fo_story.domain.model.StoryTag;
+import com.planwith.planwith_fo_story.domain.model.StoryVisitCity;
+import com.planwith.planwith_fo_story.domain.model.StoryVisitCountry;
 import com.planwith.planwith_fo_story.domain.model.VisibilityScope;
 import com.planwith.planwith_fo_story.domain.model.vo.MemberUuid;
 import com.planwith.planwith_fo_story.domain.model.vo.StoryUuid;
@@ -32,34 +38,46 @@ class StoryPersistenceAdapterIntegrationTest {
 	private StoryQueryPort storyQueryPort;
 
 	@Test
-	void savesAndLoadsStoryUsingErdColumns() {
+	void savesAndLoadsStoryAggregateMatchingDdl() {
 		UUID memberUuid = UUID.randomUUID();
+		LocalDateTime now = LocalDateTime.of(2026, 8, 23, 10, 0);
 		Story created = Story.create(
 				StoryUuid.generate(),
 				MemberUuid.of(memberUuid),
 				null,
+				false,
 				"여행 기록",
 				"내용을 작성합니다.",
 				"https://img.example/cover.png",
-				"Korea",
-				"Busan",
-				"해운대",
 				LocalDate.of(2026, 8, 1),
 				LocalDate.of(2026, 8, 5),
 				true,
 				VisibilityScope.MEMBER,
-				LocalDateTime.of(2026, 8, 23, 10, 0)
+				now
+		).replaceChildren(
+				List.of(StoryVisitCountry.create("Korea", 0, List.of(StoryVisitCity.create("Busan", 0)))),
+				List.of(StoryPlace.create(null, "해운대", 0, List.of(
+						StoryPlaceImage.create("https://img.example/1.png", 1, now)
+				))),
+				List.of(StoryTag.create("여행")),
+				List.of(),
+				now
 		);
 
 		Story saved = storyCommandPort.save(created);
 		Story loaded = storyQueryPort.findActiveByStoryUuid(saved.storyUuid().value()).orElseThrow();
 
 		assertThat(loaded.title()).isEqualTo("여행 기록");
-		assertThat(loaded.visitCity()).isEqualTo("Busan");
+		assertThat(loaded.scheduleVisible()).isFalse();
+		assertThat(loaded.viewCount()).isZero();
+		assertThat(loaded.storyCommentCount()).isZero();
+		assertThat(loaded.updatedAt()).isNotNull();
 		assertThat(loaded.visibilityScope()).isEqualTo(VisibilityScope.MEMBER);
 		assertThat(loaded.aiModerationStatus()).isEqualTo(AiModerationStatus.UNVERIFIED);
-		assertThat(loaded.storyLikeCount()).isZero();
-		assertThat(loaded.commentEnabled()).isTrue();
+		assertThat(loaded.visitCountries()).extracting(StoryVisitCountry::countryName).containsExactly("Korea");
+		assertThat(loaded.visitCountries().get(0).cities()).extracting(StoryVisitCity::cityName).containsExactly("Busan");
+		assertThat(loaded.places()).extracting(StoryPlace::placeName).containsExactly("해운대");
+		assertThat(loaded.tags()).extracting(StoryTag::tagName).containsExactly("여행");
 		assertThat(loaded.deletedAt()).isNull();
 		assertThat(storyQueryPort.findActiveByMemberUuid(memberUuid, 0, 10)).hasSize(1);
 	}
