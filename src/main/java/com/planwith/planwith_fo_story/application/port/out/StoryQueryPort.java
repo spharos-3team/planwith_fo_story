@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.planwith.planwith_fo_story.domain.model.Story;
 import com.planwith.planwith_fo_story.application.query.StorySortType;
+import com.planwith.planwith_fo_story.application.query.StorySearchType;
 
 public interface StoryQueryPort {
 
@@ -21,4 +22,6 @@ public interface StoryQueryPort {
 	List<Story> findPopularActive(int size);
 
 	List<Story> findActive(Set<UUID> authorUuids, StorySortType sort, int offset, int size);
+
+	List<Story> searchActive(StorySearchType type, String keyword, int offset, int size);
 }

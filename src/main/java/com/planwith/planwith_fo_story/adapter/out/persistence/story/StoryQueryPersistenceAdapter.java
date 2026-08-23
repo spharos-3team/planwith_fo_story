@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.planwith.planwith_fo_story.application.port.out.StoryQueryPort;
 import com.planwith.planwith_fo_story.application.query.StorySortType;
+import com.planwith.planwith_fo_story.application.query.StorySearchType;
 import com.planwith.planwith_fo_story.domain.model.Story;
 
 import lombok.RequiredArgsConstructor;
@@ -65,6 +66,17 @@ public class StoryQueryPersistenceAdapter implements StoryQueryPort {
 		List<StoryJpaEntity> entities = authorUuids == null
 				? findAllActive(sort, page)
 				: findByAuthors(authorUuids, sort, page);
+		return entities.stream().map(StoryPersistenceMapper::toDomain).toList();
+	}
+
+	@Override
+	public List<Story> searchActive(StorySearchType type, String keyword, int offset, int size) {
+		PageRequest page = page(offset, size);
+		List<StoryJpaEntity> entities = switch (type) {
+			case COUNTRY -> storyRepository.searchActiveByCountryName(keyword, page);
+			case CITY -> storyRepository.searchActiveByCityName(keyword, page);
+			case NICKNAME -> throw new IllegalArgumentException("닉네임 검색은 회원 UUID 조건으로 조회해야 합니다.");
+		};
 		return entities.stream().map(StoryPersistenceMapper::toDomain).toList();
 	}
 

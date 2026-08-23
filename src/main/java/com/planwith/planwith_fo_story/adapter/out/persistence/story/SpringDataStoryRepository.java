@@ -36,6 +36,21 @@ public interface SpringDataStoryRepository extends JpaRepository<StoryJpaEntity,
 
 	List<StoryJpaEntity> findByDeletedAtIsNullOrderByStoryLikeCountDescCreatedAtDesc(Pageable pageable);
 
+	@Query("select distinct story from StoryJpaEntity story "
+			+ "join story.visitCountries country "
+			+ "where story.deletedAt is null "
+			+ "and lower(country.countryName) like lower(concat('%', :keyword, '%')) "
+			+ "order by story.createdAt desc")
+	List<StoryJpaEntity> searchActiveByCountryName(@Param("keyword") String keyword, Pageable pageable);
+
+	@Query("select distinct story from StoryJpaEntity story "
+			+ "join story.visitCountries country "
+			+ "join country.cities city "
+			+ "where story.deletedAt is null "
+			+ "and lower(city.cityName) like lower(concat('%', :keyword, '%')) "
+			+ "order by story.createdAt desc")
+	List<StoryJpaEntity> searchActiveByCityName(@Param("keyword") String keyword, Pageable pageable);
+
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query("update StoryJpaEntity story set story.viewCount = story.viewCount + 1 "
 			+ "where story.storyUuid = :storyUuid and story.deletedAt is null")

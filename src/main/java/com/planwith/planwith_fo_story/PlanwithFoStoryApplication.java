@@ -13,6 +13,7 @@ import com.planwith.planwith_fo_story.config.StoryFeedProperties;
 import com.planwith.planwith_fo_story.config.StoryOutboxProperties;
 import com.planwith.planwith_fo_story.config.StoryOpenAiProperties;
 import com.planwith.planwith_fo_story.config.StoryScheduleProperties;
+import com.planwith.planwith_fo_story.config.StorySearchProperties;
 import com.planwith.planwith_fo_story.composition.config.StoryDetailScreenProperties;
 
 @SpringBootApplication
@@ -26,6 +27,7 @@ import com.planwith.planwith_fo_story.composition.config.StoryDetailScreenProper
 		StoryOutboxProperties.class,
 		StoryOpenAiProperties.class,
 		StoryScheduleProperties.class,
+		StorySearchProperties.class,
 		StoryDetailScreenProperties.class
 })
 public class PlanwithFoStoryApplication {

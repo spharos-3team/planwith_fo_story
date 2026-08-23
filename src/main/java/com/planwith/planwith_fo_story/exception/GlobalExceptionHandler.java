@@ -17,6 +17,8 @@ import com.planwith.planwith_fo_story.domain.exception.StoryAccessDeniedExceptio
 import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
 import com.planwith.planwith_fo_story.dto.ApiErrorResponse;
 
+import jakarta.validation.ConstraintViolationException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -73,6 +75,16 @@ public class GlobalExceptionHandler {
 				.map(DefaultMessageSourceResolvable::getDefaultMessage)
 				.orElse("요청값이 올바르지 않습니다.");
 
+		return createErrorResponse(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", message);
+	}
+
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<ApiErrorResponse> handleConstraintViolation(ConstraintViolationException exception) {
+		String message = exception.getConstraintViolations()
+				.stream()
+				.findFirst()
+				.map(violation -> violation.getMessage())
+				.orElse("요청값이 올바르지 않습니다.");
 		return createErrorResponse(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", message);
 	}
 
