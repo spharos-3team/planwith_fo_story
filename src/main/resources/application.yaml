@@ -90,6 +90,7 @@ story:
       story-created: ${STORY_TOPIC_STORY_CREATED:planwith.story.created}
       story-updated: ${STORY_TOPIC_STORY_UPDATED:planwith.story.updated}
       story-deleted: ${STORY_TOPIC_STORY_DELETED:planwith.story.deleted}
+      token-usage: ${STORY_TOPIC_TOKEN_USAGE:planwith.token.usage}
   outbox:
     enabled: ${STORY_OUTBOX_ENABLED:false}
     relay-batch-size: ${STORY_OUTBOX_RELAY_BATCH_SIZE:50}
@@ -100,6 +101,12 @@ story:
     backoff-initial: ${STORY_OUTBOX_BACKOFF_INITIAL:5s}
     backoff-multiplier: ${STORY_OUTBOX_BACKOFF_MULTIPLIER:2}
     backoff-max: ${STORY_OUTBOX_BACKOFF_MAX:5m}
+  openai:
+    enabled: ${STORY_OPENAI_ENABLED:false}
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+    model: ${OPENAI_MODERATION_MODEL:omni-moderation-latest}
+    moderation-path: ${OPENAI_MODERATION_PATH:/v1/moderations}
   schedule:
     ownership-check-enabled: ${STORY_SCHEDULE_OWNERSHIP_CHECK_ENABLED:false}
     base-url: ${SCHEDULE_SERVICE_URL:}

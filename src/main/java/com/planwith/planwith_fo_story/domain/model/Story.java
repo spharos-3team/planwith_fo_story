@@ -349,6 +349,35 @@ public final class Story {
 		);
 	}
 
+	public Story applyAiModerationResult(AiModerationStatus aiModerationStatus, LocalDateTime updatedAt) {
+		ensureActive();
+		return restore(
+				storyId,
+				storyUuid,
+				memberUuid,
+				scheduleUuid,
+				scheduleVisible,
+				title,
+				content,
+				coverImageUrl,
+				startDate,
+				endDate,
+				commentEnabled,
+				visibilityScope,
+				Objects.requireNonNull(aiModerationStatus, "AI 검증 상태는 필수입니다."),
+				viewCount,
+				storyLikeCount,
+				storyCommentCount,
+				createdAt,
+				updatedAt,
+				deletedAt,
+				visitCountries,
+				places,
+				tags,
+				visibilityMembers
+		);
+	}
+
 	public boolean isDeleted() {
 		return deletedAt != null;
 	}

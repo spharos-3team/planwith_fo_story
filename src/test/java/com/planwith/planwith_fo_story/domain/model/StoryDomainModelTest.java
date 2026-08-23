@@ -36,6 +36,14 @@ class StoryDomainModelTest {
 	}
 
 	@Test
+	void applyAiModerationResultMarksVerified() {
+		Story verified = StoryTestFactory.create(author, VisibilityScope.ALL)
+				.applyAiModerationResult(AiModerationStatus.VERIFIED, LocalDateTime.of(2026, 8, 23, 21, 0));
+
+		assertThat(verified.aiModerationStatus()).isEqualTo(AiModerationStatus.VERIFIED);
+	}
+
+	@Test
 	void replaceChildrenKeepsStoryAggregateHierarchy() {
 		LocalDateTime now = LocalDateTime.of(2026, 8, 23, 12, 0);
 		Story story = StoryTestFactory.create(author, VisibilityScope.PRIVATE)
