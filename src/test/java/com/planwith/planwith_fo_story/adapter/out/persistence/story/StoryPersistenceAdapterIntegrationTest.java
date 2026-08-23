@@ -55,10 +55,17 @@ class StoryPersistenceAdapterIntegrationTest {
 				VisibilityScope.MEMBER,
 				now
 		).replaceChildren(
-				List.of(StoryVisitCountry.create("Korea", 0, List.of(StoryVisitCity.create("Busan", 0)))),
-				List.of(StoryPlace.create(null, "해운대", 0, List.of(
-						StoryPlaceImage.create("https://img.example/1.png", 1, now)
-				))),
+				List.of(StoryVisitCountry.create(
+						"Korea",
+						0,
+						List.of(StoryVisitCity.create(
+								"Busan",
+								0,
+								List.of(StoryPlace.create(null, "해운대", 0, List.of(
+										StoryPlaceImage.create("https://img.example/1.png", 1, now)
+								)))
+						))
+				)),
 				List.of(StoryTag.create("여행")),
 				List.of(),
 				now
@@ -75,7 +82,12 @@ class StoryPersistenceAdapterIntegrationTest {
 		assertThat(loaded.visibilityScope()).isEqualTo(VisibilityScope.MEMBER);
 		assertThat(loaded.aiModerationStatus()).isEqualTo(AiModerationStatus.UNVERIFIED);
 		assertThat(loaded.visitCountries()).extracting(StoryVisitCountry::countryName).containsExactly("Korea");
-		assertThat(loaded.visitCountries().get(0).cities()).extracting(StoryVisitCity::cityName).containsExactly("Busan");
+		assertThat(loaded.visitCountries().get(0).cities()).singleElement().satisfies(city -> {
+			assertThat(city.cityName()).isEqualTo("Busan");
+			assertThat(city.places()).extracting(StoryPlace::placeName).containsExactly("해운대");
+			assertThat(city.places().get(0).images()).extracting(StoryPlaceImage::imageUrl)
+					.containsExactly("https://img.example/1.png");
+		});
 		assertThat(loaded.places()).extracting(StoryPlace::placeName).containsExactly("해운대");
 		assertThat(loaded.tags()).extracting(StoryTag::tagName).containsExactly("여행");
 		assertThat(loaded.deletedAt()).isNull();

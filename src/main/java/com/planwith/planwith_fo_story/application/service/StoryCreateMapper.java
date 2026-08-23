@@ -2,6 +2,7 @@ package com.planwith.planwith_fo_story.application.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import com.planwith.planwith_fo_story.application.command.CreateStoryCommand;
 import com.planwith.planwith_fo_story.domain.model.Story;
@@ -35,21 +36,24 @@ final class StoryCreateMapper {
 				now
 		);
 		return story.replaceChildren(
-				toCountries(command.countries()),
-				toPlaces(command.places(), now),
+				toCountries(command.countries(), now),
 				toTags(command.tags()),
 				toVisibilityMembers(command.visibilityMemberUuids(), now),
 				now
 		);
 	}
 
-	private static List<StoryVisitCountry> toCountries(List<CreateStoryCommand.Country> countries) {
+	private static List<StoryVisitCountry> toCountries(List<CreateStoryCommand.Country> countries, LocalDateTime now) {
 		return countries.stream()
 				.map(country -> StoryVisitCountry.create(
 						country.countryName(),
 						country.displayOrder(),
 						country.cities().stream()
-								.map(city -> StoryVisitCity.create(city.cityName(), city.displayOrder()))
+								.map(city -> StoryVisitCity.create(
+										city.cityName(),
+										city.displayOrder(),
+										toPlaces(city.places(), now)
+								))
 								.toList()
 				))
 				.toList();
@@ -72,7 +76,7 @@ final class StoryCreateMapper {
 		return tags.stream().map(StoryTag::create).toList();
 	}
 
-	private static List<StoryVisibilityMember> toVisibilityMembers(List<java.util.UUID> memberUuids, LocalDateTime now) {
+	private static List<StoryVisibilityMember> toVisibilityMembers(List<UUID> memberUuids, LocalDateTime now) {
 		return memberUuids.stream()
 				.map(memberUuid -> StoryVisibilityMember.create(MemberUuid.of(memberUuid), now))
 				.toList();

@@ -28,8 +28,9 @@ class StoryPlaceJpaEntity {
 	@JoinColumn(name = "story_id", nullable = false)
 	private StoryJpaEntity story;
 
-	@Column(name = "story_visit_city_id")
-	private Long storyVisitCityId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "story_visit_city_id")
+	private StoryVisitCityJpaEntity city;
 
 	@Column(name = "place_name", nullable = false, length = 255)
 	private String placeName;
@@ -43,9 +44,9 @@ class StoryPlaceJpaEntity {
 	protected StoryPlaceJpaEntity() {
 	}
 
-	StoryPlaceJpaEntity(StoryJpaEntity story, Long storyVisitCityId, String placeName, int displayOrder) {
+	StoryPlaceJpaEntity(StoryJpaEntity story, StoryVisitCityJpaEntity city, String placeName, int displayOrder) {
 		this.story = story;
-		this.storyVisitCityId = storyVisitCityId;
+		this.city = city;
 		this.placeName = placeName;
 		this.displayOrder = displayOrder;
 	}
@@ -55,7 +56,7 @@ class StoryPlaceJpaEntity {
 	}
 
 	Long storyVisitCityId() {
-		return storyVisitCityId;
+		return city == null ? null : city.storyVisitCityId();
 	}
 
 	String placeName() {

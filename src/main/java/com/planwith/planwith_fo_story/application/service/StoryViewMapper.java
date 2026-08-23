@@ -8,6 +8,7 @@ import com.planwith.planwith_fo_story.application.query.StorySummaryView;
 import com.planwith.planwith_fo_story.application.query.StoryVisitCityView;
 import com.planwith.planwith_fo_story.application.query.StoryVisitCountryView;
 import com.planwith.planwith_fo_story.domain.model.Story;
+import com.planwith.planwith_fo_story.domain.model.StoryPlace;
 import com.planwith.planwith_fo_story.domain.model.projection.MemberProfileProjection;
 
 final class StoryViewMapper {
@@ -39,19 +40,15 @@ final class StoryViewMapper {
 								country.countryName(),
 								country.displayOrder(),
 								country.cities().stream()
-										.map(city -> new StoryVisitCityView(city.cityName(), city.displayOrder()))
+										.map(city -> new StoryVisitCityView(
+												city.cityName(),
+												city.displayOrder(),
+												city.places().stream().map(StoryViewMapper::toPlaceView).toList()
+										))
 										.toList()
 						))
 						.toList(),
-				story.places().stream()
-						.map(place -> new StoryPlaceView(
-								place.placeName(),
-								place.displayOrder(),
-								place.images().stream()
-										.map(image -> new StoryPlaceImageView(image.imageUrl(), image.imageOrder()))
-										.toList()
-						))
-						.toList(),
+				story.places().stream().map(StoryViewMapper::toPlaceView).toList(),
 				story.tags().stream().map(tag -> tag.tagName()).toList(),
 				story.visibilityMembers().stream().map(member -> member.memberUuid().asString()).toList(),
 				toAuthor(story, authorProjection)
@@ -71,6 +68,16 @@ final class StoryViewMapper {
 				story.storyCommentCount(),
 				story.createdAt(),
 				toAuthor(story, authorProjection)
+		);
+	}
+
+	private static StoryPlaceView toPlaceView(StoryPlace place) {
+		return new StoryPlaceView(
+				place.placeName(),
+				place.displayOrder(),
+				place.images().stream()
+						.map(image -> new StoryPlaceImageView(image.imageUrl(), image.imageOrder()))
+						.toList()
 		);
 	}
 

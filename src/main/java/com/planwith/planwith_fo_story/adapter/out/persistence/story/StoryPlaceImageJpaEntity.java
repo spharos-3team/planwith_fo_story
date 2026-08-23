@@ -11,9 +11,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "story_place_image")
+@Table(
+		name = "story_place_image",
+		uniqueConstraints = @UniqueConstraint(
+				name = "uk_story_place_image_order",
+				columnNames = { "story_place_id", "image_order" }
+		)
+)
 class StoryPlaceImageJpaEntity {
 
 	@Id

@@ -33,9 +33,8 @@ public final class CreateStoryCommandFactory {
 				List.of(new CreateStoryCommand.Country(
 						"Korea",
 						0,
-						List.of(new CreateStoryCommand.City("Seoul", 0))
+						List.of(new CreateStoryCommand.City("Seoul", 0, List.of()))
 				)),
-				List.of(),
 				List.of(),
 				List.of()
 		);

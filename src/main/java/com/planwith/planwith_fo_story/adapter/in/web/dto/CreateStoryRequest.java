@@ -39,8 +39,6 @@ public record CreateStoryRequest(
 		@NotEmpty(message = "방문국가는 최소 1개 이상이어야 합니다.")
 		@Valid
 		List<CreateStoryCountryRequest> countries,
-		@Valid
-		List<CreateStoryPlaceRequest> places,
 		List<@Size(max = 50, message = "태그는 50자를 초과할 수 없습니다.") String> tags,
 		List<UUID> visibilityMemberUuids
 ) {
@@ -58,7 +56,6 @@ public record CreateStoryRequest(
 				visibilityScope,
 				Boolean.TRUE.equals(aiVerificationRequested),
 				toCountries(),
-				toPlaces(),
 				tags == null ? List.of() : List.copyOf(tags),
 				visibilityMemberUuids == null ? List.of() : List.copyOf(visibilityMemberUuids)
 		);
@@ -83,13 +80,14 @@ public record CreateStoryRequest(
 					CreateStoryCityRequest city = cities.get(index);
 					return new CreateStoryCommand.City(
 							city.cityName(),
-							resolveOrder(city.displayOrder(), index)
+							resolveOrder(city.displayOrder(), index),
+							toPlaces(city.places())
 					);
 				})
 				.toList();
 	}
 
-	private List<CreateStoryCommand.Place> toPlaces() {
+	private List<CreateStoryCommand.Place> toPlaces(List<CreateStoryPlaceRequest> places) {
 		if (places == null) {
 			return List.of();
 		}
