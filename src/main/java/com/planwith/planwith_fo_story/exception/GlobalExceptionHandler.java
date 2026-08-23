@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateException;
+import com.planwith.planwith_fo_story.domain.exception.InvalidStoryQueryException;
 import com.planwith.planwith_fo_story.domain.exception.ScheduleNotOwnedException;
 import com.planwith.planwith_fo_story.domain.exception.MemberAuthenticationRequiredException;
 import com.planwith.planwith_fo_story.domain.exception.StoryAccessDeniedException;
@@ -64,6 +65,11 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(InvalidStoryStateException.class)
 	public ResponseEntity<ApiErrorResponse> handleInvalidStoryState(InvalidStoryStateException exception) {
 		return createErrorResponse(HttpStatus.BAD_REQUEST, "INVALID_STORY_STATE", exception.getMessage());
+	}
+
+	@ExceptionHandler(InvalidStoryQueryException.class)
+	public ResponseEntity<ApiErrorResponse> handleInvalidStoryQuery(InvalidStoryQueryException exception) {
+		return createErrorResponse(HttpStatus.BAD_REQUEST, "INVALID_STORY_QUERY", exception.getMessage());
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
