@@ -69,7 +69,12 @@ class StoryQueryControllerAccessTest {
 		mockMvc.perform(get("/api/stories/{storyUuid}", created.storyUuid()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.storyUuid").value(created.storyUuid()))
-				.andExpect(jsonPath("$.visibilityScope").value("ALL"));
+				.andExpect(jsonPath("$.visibilityScope").value("ALL"))
+				.andExpect(jsonPath("$.countries[0].countryName").value("Korea"))
+				.andExpect(jsonPath("$.countries[0].cities[0].cityName").value("Seoul"))
+				.andExpect(jsonPath("$.visitCountries").doesNotExist())
+				.andExpect(jsonPath("$.author").doesNotExist())
+				.andExpect(jsonPath("$.visibilityMemberUuids").doesNotExist());
 	}
 
 	private StoryDetailView create(UUID authorUuid, VisibilityScope visibilityScope, List<UUID> visibilityMemberUuids) {
