@@ -31,4 +31,30 @@ public record StoryDetailView(
 		List<String> visibilityMemberUuids,
 		StoryAuthorView author
 ) {
+	public StoryDetailView hideScheduleReference() {
+		return new StoryDetailView(
+				storyUuid,
+				memberUuid,
+				null,
+				scheduleVisible,
+				title,
+				content,
+				coverImageUrl,
+				startDate,
+				endDate,
+				commentEnabled,
+				visibilityScope,
+				aiModerationStatus,
+				viewCount,
+				storyLikeCount,
+				storyCommentCount,
+				createdAt,
+				updatedAt,
+				visitCountries,
+				places,
+				tags,
+				visibilityMemberUuids,
+				author
+		);
+	}
 }

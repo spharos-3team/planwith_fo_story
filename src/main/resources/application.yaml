@@ -100,6 +100,10 @@ story:
     backoff-initial: ${STORY_OUTBOX_BACKOFF_INITIAL:5s}
     backoff-multiplier: ${STORY_OUTBOX_BACKOFF_MULTIPLIER:2}
     backoff-max: ${STORY_OUTBOX_BACKOFF_MAX:5m}
+  schedule:
+    ownership-check-enabled: ${STORY_SCHEDULE_OWNERSHIP_CHECK_ENABLED:false}
+    base-url: ${SCHEDULE_SERVICE_URL:}
+    ownership-path: ${STORY_SCHEDULE_OWNERSHIP_PATH:/api/schedules/{scheduleUuid}/owners/{memberUuid}}
   cache:
     key-prefix: ${STORY_CACHE_KEY_PREFIX:story}
     detail-namespace: ${STORY_CACHE_DETAIL_NAMESPACE:detail}

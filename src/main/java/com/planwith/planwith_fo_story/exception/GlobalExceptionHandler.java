@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateException;
+import com.planwith.planwith_fo_story.domain.exception.ScheduleNotOwnedException;
 import com.planwith.planwith_fo_story.domain.exception.MemberAuthenticationRequiredException;
 import com.planwith.planwith_fo_story.domain.exception.StoryAccessDeniedException;
 import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
@@ -51,6 +52,11 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(StoryAccessDeniedException.class)
 	public ResponseEntity<ApiErrorResponse> handleStoryAccessDenied(StoryAccessDeniedException exception) {
 		return createErrorResponse(HttpStatus.FORBIDDEN, "STORY_ACCESS_DENIED", exception.getMessage());
+	}
+
+	@ExceptionHandler(ScheduleNotOwnedException.class)
+	public ResponseEntity<ApiErrorResponse> handleScheduleNotOwned(ScheduleNotOwnedException exception) {
+		return createErrorResponse(HttpStatus.BAD_REQUEST, "SCHEDULE_NOT_OWNED", exception.getMessage());
 	}
 
 	@ExceptionHandler(InvalidStoryStateException.class)
