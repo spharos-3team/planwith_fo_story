@@ -3,7 +3,6 @@ package com.planwith.planwith_fo_story.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.LocalDate;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.planwith.planwith_fo_story.adapter.out.persistence.outbox.SpringDataStoryOutboxRepository;
 import com.planwith.planwith_fo_story.adapter.out.persistence.story.SpringDataStoryRepository;
-import com.planwith.planwith_fo_story.application.command.CreateStoryCommand;
+import com.planwith.planwith_fo_story.application.command.CreateStoryCommandFactory;
 import com.planwith.planwith_fo_story.application.event.StoryCreatedEvent;
 import com.planwith.planwith_fo_story.application.port.in.StoryCommandUseCase;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
@@ -46,16 +45,11 @@ class StoryCommandOutboxIntegrationTest {
 	void createPersistsStoryAndOutboxInSameTransaction() {
 		UUID memberUuid = UUID.randomUUID();
 
-		StoryDetailView created = storyCommandUseCase.create(new CreateStoryCommand(
+		StoryDetailView created = storyCommandUseCase.create(CreateStoryCommandFactory.basic(
 				memberUuid,
-				null,
-				false,
 				"첫 스토리",
 				"본문입니다.",
 				"https://img.example/cover.png",
-				LocalDate.of(2026, 8, 1),
-				LocalDate.of(2026, 8, 5),
-				true,
 				VisibilityScope.ALL
 		));
 
@@ -74,16 +68,11 @@ class StoryCommandOutboxIntegrationTest {
 	void createDoesNotLeaveStoryWhenDomainValidationFails() {
 		UUID memberUuid = UUID.randomUUID();
 
-		assertThatThrownBy(() -> storyCommandUseCase.create(new CreateStoryCommand(
+		assertThatThrownBy(() -> storyCommandUseCase.create(CreateStoryCommandFactory.basic(
 				memberUuid,
-				null,
-				false,
 				" ",
 				"본문입니다.",
 				"https://img.example/cover.png",
-				LocalDate.of(2026, 8, 1),
-				LocalDate.of(2026, 8, 5),
-				true,
 				VisibilityScope.ALL
 		))).isInstanceOf(InvalidStoryStateException.class);
 

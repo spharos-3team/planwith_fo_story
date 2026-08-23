@@ -20,17 +20,18 @@ import com.planwith.planwith_fo_story.application.event.StoryDeletedEvent;
 import com.planwith.planwith_fo_story.application.event.StoryUpdatedEvent;
 import com.planwith.planwith_fo_story.application.port.in.StoryCommandUseCase;
 import com.planwith.planwith_fo_story.application.port.out.MemberProfileProjectionPort;
+import com.planwith.planwith_fo_story.application.port.out.StoryAiVerificationRequestPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryCommandPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryEventOutboxPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryOutboxMessage;
 import com.planwith.planwith_fo_story.application.port.out.StoryQueryCachePort;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
+import com.planwith.planwith_fo_story.application.support.AfterCommitAction;
 import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateException;
 import com.planwith.planwith_fo_story.domain.exception.MemberAuthenticationRequiredException;
 import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
 import com.planwith.planwith_fo_story.domain.model.Story;
 import com.planwith.planwith_fo_story.domain.model.vo.MemberUuid;
-import com.planwith.planwith_fo_story.domain.model.vo.StoryUuid;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	private final StoryEventOutboxPort storyEventOutboxPort;
 	private final StoryQueryCachePort storyQueryCachePort;
 	private final MemberProfileProjectionPort memberProfileProjectionPort;
+	private final StoryAiVerificationRequestPort storyAiVerificationRequestPort;
 	private final ObjectMapper objectMapper;
 	private final Clock clock;
 
@@ -53,21 +55,12 @@ public class StoryCommandService implements StoryCommandUseCase {
 		log.info("StoryCommandService : create : 스토리 생성 비즈니스 로직 시작");
 		requireActor(command.memberUuid());
 		LocalDateTime now = LocalDateTime.now(clock);
-		Story story = Story.create(
-				StoryUuid.generate(),
-				MemberUuid.of(command.memberUuid()),
-				command.scheduleUuid(),
-				command.scheduleVisible(),
-				command.title(),
-				command.content(),
-				command.coverImageUrl(),
-				command.startDate(),
-				command.endDate(),
-				command.commentEnabled(),
-				command.visibilityScope(),
-				now
+		log.debug(
+				"StoryCommandService : create : 스토리 생성 요청 데이터 확인 - memberUuid={}, visibilityScope={}",
+				command.memberUuid(),
+				command.visibilityScope()
 		);
-		Story saved = storyCommandPort.save(story);
+		Story saved = storyCommandPort.save(StoryCreateMapper.toNewStory(command, now));
 		appendOutbox(StoryCreatedEvent.EVENT_TYPE, StoryCreatedEvent.of(
 				UUID.randomUUID().toString(),
 				saved.memberUuid().asString(),
@@ -75,6 +68,13 @@ public class StoryCommandService implements StoryCommandUseCase {
 				Instant.now(clock)
 		), saved);
 		evictCaches(saved);
+		if (command.aiVerificationRequested()) {
+			log.info("StoryCommandService : create : AI 검증 요청 예약 - storyUuid={}", saved.storyUuid());
+			AfterCommitAction.run(() -> storyAiVerificationRequestPort.requestVerification(
+					saved.storyUuid().value(),
+					saved.memberUuid().value()
+			));
+		}
 		log.info("StoryCommandService : create : 스토리 생성 완료 - storyUuid={}", saved.storyUuid());
 		return toDetail(saved);
 	}

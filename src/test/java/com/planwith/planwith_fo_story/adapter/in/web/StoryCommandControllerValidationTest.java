@@ -86,7 +86,15 @@ class StoryCommandControllerValidationTest {
 								  "startDate": "2026-08-01",
 								  "endDate": "2026-08-05",
 								  "commentEnabled": true,
-								  "visibilityScope": "ALL"
+								  "visibilityScope": "ALL",
+								  "countries": [
+								    {
+								      "countryName": "Korea",
+								      "cities": [
+								        { "cityName": "Seoul" }
+								      ]
+								    }
+								  ]
 								}
 								"""))
 				.andExpect(status().isBadRequest())
@@ -106,11 +114,39 @@ class StoryCommandControllerValidationTest {
 								  "startDate": "2026-08-01",
 								  "endDate": "2026-08-05",
 								  "commentEnabled": true,
-								  "visibilityScope": "ALL"
+								  "visibilityScope": "ALL",
+								  "countries": [
+								    {
+								      "countryName": "Korea",
+								      "cities": [
+								        { "cityName": "Seoul" }
+								      ]
+								    }
+								  ]
 								}
 								"""))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("INVALID_STORY_STATE"));
+	}
+
+	@Test
+	void createWithoutCountriesReturnsBadRequest() throws Exception {
+		mockMvc.perform(post("/api/stories")
+						.header("X-Member-UUID", UUID.randomUUID())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "title": "제목",
+								  "content": "본문입니다.",
+								  "coverImageUrl": "https://img.example/cover.png",
+								  "startDate": "2026-08-01",
+								  "endDate": "2026-08-05",
+								  "commentEnabled": true,
+								  "visibilityScope": "ALL"
+								}
+								"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
 	}
 
 	@Test
@@ -120,7 +156,10 @@ class StoryCommandControllerValidationTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(validCreateBody()))
 				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.title").value("첫 스토리"));
+				.andExpect(jsonPath("$.title").value("첫 스토리"))
+				.andExpect(jsonPath("$.visitCountries[0].countryName").value("Korea"))
+				.andExpect(jsonPath("$.visitCountries[0].cities[0].cityName").value("Seoul"))
+				.andExpect(jsonPath("$.aiModerationStatus").value("UNVERIFIED"));
 	}
 
 	private static String validCreateBody() {
@@ -132,7 +171,15 @@ class StoryCommandControllerValidationTest {
 				  "startDate": "2026-08-01",
 				  "endDate": "2026-08-05",
 				  "commentEnabled": true,
-				  "visibilityScope": "ALL"
+				  "visibilityScope": "ALL",
+				  "countries": [
+				    {
+				      "countryName": "Korea",
+				      "cities": [
+				        { "cityName": "Seoul" }
+				      ]
+				    }
+				  ]
 				}
 				""";
 	}
