@@ -20,6 +20,7 @@ import com.planwith.planwith_fo_story.application.event.StoryDeletedEvent;
 import com.planwith.planwith_fo_story.application.event.StoryUpdatedEvent;
 import com.planwith.planwith_fo_story.application.port.in.StoryCommandUseCase;
 import com.planwith.planwith_fo_story.application.port.out.MemberProfileProjectionPort;
+import com.planwith.planwith_fo_story.application.port.out.ScheduleOwnershipPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryAiVerificationRequestPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryCommandPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryEventOutboxPort;
@@ -28,6 +29,7 @@ import com.planwith.planwith_fo_story.application.port.out.StoryQueryCachePort;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
 import com.planwith.planwith_fo_story.application.support.AfterCommitAction;
 import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateException;
+import com.planwith.planwith_fo_story.domain.exception.ScheduleNotOwnedException;
 import com.planwith.planwith_fo_story.domain.exception.MemberAuthenticationRequiredException;
 import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
 import com.planwith.planwith_fo_story.domain.model.Story;
@@ -45,6 +47,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	private final StoryEventOutboxPort storyEventOutboxPort;
 	private final StoryQueryCachePort storyQueryCachePort;
 	private final MemberProfileProjectionPort memberProfileProjectionPort;
+	private final ScheduleOwnershipPort scheduleOwnershipPort;
 	private final StoryAiVerificationRequestPort storyAiVerificationRequestPort;
 	private final ObjectMapper objectMapper;
 	private final Clock clock;
@@ -54,6 +57,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	public StoryDetailView create(CreateStoryCommand command) {
 		log.info("StoryCommandService : create : 스토리 생성 비즈니스 로직 시작");
 		requireActor(command.memberUuid());
+		ensureOwnSchedule(command.scheduleUuid(), command.memberUuid());
 		LocalDateTime now = LocalDateTime.now(clock);
 		log.debug(
 				"StoryCommandService : create : 스토리 생성 요청 데이터 확인 - memberUuid={}, visibilityScope={}",
@@ -84,6 +88,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 	public StoryDetailView update(UpdateStoryCommand command) {
 		log.info("StoryCommandService : update : 스토리 수정 비즈니스 로직 시작 - storyUuid={}", command.storyUuid());
 		requireActor(command.actorUuid());
+		ensureOwnSchedule(command.scheduleUuid(), command.actorUuid());
 		LocalDateTime now = LocalDateTime.now(clock);
 		Story updated = loadActive(command.storyUuid()).update(
 				MemberUuid.of(command.actorUuid()),
@@ -162,6 +167,17 @@ public class StoryCommandService implements StoryCommandUseCase {
 		evictCaches(saved);
 		log.info("StoryCommandService : changeCommentEnabled : 스토리 댓글 허용 변경 완료 - storyUuid={}", saved.storyUuid());
 		return toDetail(saved);
+	}
+
+	private void ensureOwnSchedule(UUID scheduleUuid, UUID memberUuid) {
+		if (scheduleUuid == null) {
+			return;
+		}
+		log.info("StoryCommandService : ensureOwnSchedule : 일정 첨부 소유 확인 시작 - scheduleUuid={}", scheduleUuid);
+		if (!scheduleOwnershipPort.isOwnedBy(scheduleUuid, memberUuid)) {
+			throw new ScheduleNotOwnedException();
+		}
+		log.info("StoryCommandService : ensureOwnSchedule : 일정 첨부 소유 확인 완료 - scheduleUuid={}", scheduleUuid);
 	}
 
 	private void requireActor(UUID actorUuid) {

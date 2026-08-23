@@ -22,6 +22,7 @@ import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
 import com.planwith.planwith_fo_story.domain.model.Story;
 import com.planwith.planwith_fo_story.domain.model.projection.MembershipEntitlementProjection;
 import com.planwith.planwith_fo_story.domain.model.vo.MemberUuid;
+import com.planwith.planwith_fo_story.domain.service.StorySchedulePolicy;
 import com.planwith.planwith_fo_story.domain.service.StoryVisibilityPolicy;
 
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ public class StoryQueryService implements StoryQueryUseCase {
 	private final MemberProfileProjectionPort memberProfileProjectionPort;
 	private final MembershipEntitlementProjectionPort membershipEntitlementProjectionPort;
 	private final StoryVisibilityPolicy visibilityPolicy;
+	private final StorySchedulePolicy schedulePolicy;
 
 	public StoryQueryService(
 			StoryQueryPort storyQueryPort,
@@ -48,14 +50,16 @@ public class StoryQueryService implements StoryQueryUseCase {
 		this.memberProfileProjectionPort = memberProfileProjectionPort;
 		this.membershipEntitlementProjectionPort = membershipEntitlementProjectionPort;
 		this.visibilityPolicy = new StoryVisibilityPolicy();
+		this.schedulePolicy = new StorySchedulePolicy();
 	}
 
 	@Override
 	public StoryDetailView getDetail(GetStoryDetailQuery query) {
 		log.debug("StoryQueryService : getDetail : 스토리 상세 조회 시작 - storyUuid={}", query.storyUuid());
-		return storyQueryCachePort.findDetail(query.storyUuid())
-				.filter(view -> canViewCached(view, query.viewerUuid()))
+		StoryDetailView view = storyQueryCachePort.findDetail(query.storyUuid())
+				.filter(cached -> canViewCached(cached, query.viewerUuid()))
 				.orElseGet(() -> loadDetailFromDb(query));
+		return maskScheduleForViewer(view, query.viewerUuid());
 	}
 
 	@Override
@@ -127,6 +131,17 @@ public class StoryQueryService implements StoryQueryUseCase {
 					.map(MembershipEntitlementProjection::canViewMembershipStories)
 					.orElse(false);
 		};
+	}
+
+	private StoryDetailView maskScheduleForViewer(StoryDetailView view, UUID viewerUuid) {
+		MemberUuid author = MemberUuid.of(view.memberUuid());
+		MemberUuid viewer = viewerUuid == null ? null : MemberUuid.of(viewerUuid);
+		UUID scheduleUuid = view.scheduleUuid() == null ? null : UUID.fromString(view.scheduleUuid());
+		if (schedulePolicy.canExposeScheduleReference(author, viewer, scheduleUuid, view.scheduleVisible())) {
+			return view;
+		}
+		log.debug("StoryQueryService : maskScheduleForViewer : 일정 UUID를 조회자에게 숨김 - storyUuid={}", view.storyUuid());
+		return view.hideScheduleReference();
 	}
 
 	private StoryDetailView toDetail(Story story) {

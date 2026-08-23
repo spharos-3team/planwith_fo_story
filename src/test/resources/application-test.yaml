@@ -37,3 +37,5 @@ story:
     consumer-enabled: false
   outbox:
     enabled: false
+  schedule:
+    ownership-check-enabled: false
