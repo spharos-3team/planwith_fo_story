@@ -85,6 +85,8 @@ story:
       member-profile-changed: ${STORY_TOPIC_MEMBER_PROFILE_CHANGED:planwith.member.profile-changed}
       like-created: ${STORY_TOPIC_LIKE_CREATED:planwith.like.created}
       like-removed: ${STORY_TOPIC_LIKE_REMOVED:planwith.like.removed}
+      comment-created: ${STORY_TOPIC_COMMENT_CREATED:planwith.comment.created}
+      comment-removed: ${STORY_TOPIC_COMMENT_REMOVED:planwith.comment.removed}
       membership-subscribed: ${STORY_TOPIC_MEMBERSHIP_SUBSCRIBED:planwith.membership.subscribed}
       membership-canceled: ${STORY_TOPIC_MEMBERSHIP_CANCELED:planwith.membership.canceled}
       story-created: ${STORY_TOPIC_STORY_CREATED:planwith.story.created}

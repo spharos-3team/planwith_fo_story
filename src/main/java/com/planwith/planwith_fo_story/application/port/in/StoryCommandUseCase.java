@@ -4,6 +4,7 @@ import com.planwith.planwith_fo_story.application.command.ChangeStoryCommentEnab
 import com.planwith.planwith_fo_story.application.command.ChangeStoryVisibilityCommand;
 import com.planwith.planwith_fo_story.application.command.CreateStoryCommand;
 import com.planwith.planwith_fo_story.application.command.DeleteStoryCommand;
+import com.planwith.planwith_fo_story.application.command.IncreaseStoryViewCountCommand;
 import com.planwith.planwith_fo_story.application.command.UpdateStoryCommand;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
 
@@ -18,4 +19,6 @@ public interface StoryCommandUseCase {
 	StoryDetailView changeVisibility(ChangeStoryVisibilityCommand command);
 
 	StoryDetailView changeCommentEnabled(ChangeStoryCommentEnabledCommand command);
+
+	void increaseViewCount(IncreaseStoryViewCountCommand command);
 }
