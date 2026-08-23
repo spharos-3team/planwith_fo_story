@@ -12,9 +12,11 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planwith.planwith_fo_story.adapter.in.kafka.dto.LikeChangedEventPayload;
+import com.planwith.planwith_fo_story.adapter.in.kafka.dto.CommentChangedEventPayload;
 import com.planwith.planwith_fo_story.adapter.in.kafka.dto.MemberProfileChangedEventPayload;
 import com.planwith.planwith_fo_story.adapter.in.kafka.dto.MembershipChangedEventPayload;
 import com.planwith.planwith_fo_story.application.command.ProjectLikeCountCommand;
+import com.planwith.planwith_fo_story.application.command.ProjectCommentCountCommand;
 import com.planwith.planwith_fo_story.application.command.ProjectMemberProfileCommand;
 import com.planwith.planwith_fo_story.application.command.ProjectMembershipEntitlementCommand;
 import com.planwith.planwith_fo_story.application.port.in.StoryProjectionUseCase;
@@ -47,6 +49,8 @@ public class StoryInboundEventConsumer {
 					"${story.kafka.topics.member-profile-changed}",
 					"${story.kafka.topics.like-created}",
 					"${story.kafka.topics.like-removed}",
+					"${story.kafka.topics.comment-created}",
+					"${story.kafka.topics.comment-removed}",
 					"${story.kafka.topics.membership-subscribed}",
 					"${story.kafka.topics.membership-canceled}"
 			}
@@ -67,6 +71,14 @@ public class StoryInboundEventConsumer {
 			}
 			if (topics.getLikeRemoved().equals(topic)) {
 				projectLike(payload, false);
+				return;
+			}
+			if (topics.getCommentCreated().equals(topic)) {
+				projectComment(payload, true);
+				return;
+			}
+			if (topics.getCommentRemoved().equals(topic)) {
+				projectComment(payload, false);
 				return;
 			}
 			if (topics.getMembershipSubscribed().equals(topic)) {
@@ -115,6 +127,23 @@ public class StoryInboundEventConsumer {
 			return;
 		}
 		storyProjectionUseCase.projectLikeRemoved(command);
+	}
+
+	private void projectComment(String payload, boolean created) {
+		CommentChangedEventPayload event = parse(payload, CommentChangedEventPayload.class);
+		if (event == null || event.targetUuid() == null) {
+			return;
+		}
+		ProjectCommentCountCommand command = new ProjectCommentCountCommand(
+				event.targetType(),
+				UUID.fromString(event.targetUuid()),
+				event.sourceVersion() == null ? 0L : event.sourceVersion()
+		);
+		if (created) {
+			storyProjectionUseCase.projectCommentCreated(command);
+			return;
+		}
+		storyProjectionUseCase.projectCommentRemoved(command);
 	}
 
 	private void projectMembership(String payload, boolean subscribed) {

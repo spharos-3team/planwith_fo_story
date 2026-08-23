@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planwith.planwith_fo_story.application.command.ProjectLikeCountCommand;
+import com.planwith.planwith_fo_story.application.command.ProjectCommentCountCommand;
 import com.planwith.planwith_fo_story.application.command.ProjectMemberProfileCommand;
 import com.planwith.planwith_fo_story.application.port.in.StoryProjectionUseCase;
 import com.planwith.planwith_fo_story.config.StoryKafkaProperties;
@@ -50,6 +51,18 @@ class StoryInboundEventConsumerTest {
 		consumer.consume(properties.getTopics().getLikeCreated(), payload);
 
 		verify(projectionUseCase).projectLikeCreated(any(ProjectLikeCountCommand.class));
+	}
+
+	@Test
+	void projectsCommentRemovedForStoryTarget() {
+		UUID storyUuid = UUID.randomUUID();
+		String payload = """
+				{"eventUuid":"%s","targetType":"STORY","targetUuid":"%s","sourceVersion":2}
+				""".formatted(UUID.randomUUID(), storyUuid);
+
+		consumer.consume(properties.getTopics().getCommentRemoved(), payload);
+
+		verify(projectionUseCase).projectCommentRemoved(any(ProjectCommentCountCommand.class));
 	}
 
 	@Test

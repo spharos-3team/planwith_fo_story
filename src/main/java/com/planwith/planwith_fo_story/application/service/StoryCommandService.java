@@ -14,6 +14,7 @@ import com.planwith.planwith_fo_story.application.command.ChangeStoryCommentEnab
 import com.planwith.planwith_fo_story.application.command.ChangeStoryVisibilityCommand;
 import com.planwith.planwith_fo_story.application.command.CreateStoryCommand;
 import com.planwith.planwith_fo_story.application.command.DeleteStoryCommand;
+import com.planwith.planwith_fo_story.application.command.IncreaseStoryViewCountCommand;
 import com.planwith.planwith_fo_story.application.command.UpdateStoryCommand;
 import com.planwith.planwith_fo_story.application.event.StoryCreatedEvent;
 import com.planwith.planwith_fo_story.application.event.StoryDeletedEvent;
@@ -23,6 +24,7 @@ import com.planwith.planwith_fo_story.application.port.out.MemberProfileProjecti
 import com.planwith.planwith_fo_story.application.port.out.ScheduleOwnershipPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryAiVerificationRequestPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryCommandPort;
+import com.planwith.planwith_fo_story.application.port.out.StoryCounterPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryEventOutboxPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryOutboxMessage;
 import com.planwith.planwith_fo_story.application.port.out.StoryQueryCachePort;
@@ -44,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 public class StoryCommandService implements StoryCommandUseCase {
 
 	private final StoryCommandPort storyCommandPort;
+	private final StoryCounterPort storyCounterPort;
 	private final StoryEventOutboxPort storyEventOutboxPort;
 	private final StoryQueryCachePort storyQueryCachePort;
 	private final MemberProfileProjectionPort memberProfileProjectionPort;
@@ -167,6 +170,16 @@ public class StoryCommandService implements StoryCommandUseCase {
 		evictCaches(saved);
 		log.info("StoryCommandService : changeCommentEnabled : 스토리 댓글 허용 변경 완료 - storyUuid={}", saved.storyUuid());
 		return toDetail(saved);
+	}
+
+	@Override
+	@Transactional
+	public void increaseViewCount(IncreaseStoryViewCountCommand command) {
+		if (!storyCounterPort.incrementViewCount(command.storyUuid())) {
+			throw new StoryNotFoundException(command.storyUuid().toString());
+		}
+		storyQueryCachePort.evictDetail(command.storyUuid());
+		storyQueryCachePort.evictPopular();
 	}
 
 	private void ensureOwnSchedule(UUID scheduleUuid, UUID memberUuid) {
