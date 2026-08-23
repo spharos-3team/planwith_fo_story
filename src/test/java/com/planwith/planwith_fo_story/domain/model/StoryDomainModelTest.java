@@ -44,6 +44,55 @@ class StoryDomainModelTest {
 	}
 
 	@Test
+	void updateResetsAiOnlyWhenTitleOrContentChanges() {
+		LocalDateTime verifiedAt = LocalDateTime.of(2026, 8, 23, 21, 0);
+		LocalDateTime updatedAt = verifiedAt.plusHours(1);
+		Story verified = StoryTestFactory.create(author, VisibilityScope.ALL)
+				.applyAiModerationResult(AiModerationStatus.VERIFIED, verifiedAt);
+		List<StoryVisitCountry> countries = List.of(StoryVisitCountry.create(
+				"Korea",
+				0,
+				List.of(StoryVisitCity.create("Seoul", 0))
+		));
+
+		Story metadataOnly = verified.update(
+				author,
+				null,
+				false,
+				verified.title(),
+				verified.content(),
+				"https://img.example/changed.png",
+				verified.startDate(),
+				verified.endDate(),
+				false,
+				VisibilityScope.ALL,
+				countries,
+				List.of(StoryTag.create("updated")),
+				List.of(),
+				updatedAt
+		);
+		Story contentChanged = metadataOnly.update(
+				author,
+				null,
+				false,
+				metadataOnly.title(),
+				"changed content",
+				metadataOnly.coverImageUrl(),
+				metadataOnly.startDate(),
+				metadataOnly.endDate(),
+				metadataOnly.commentEnabled(),
+				metadataOnly.visibilityScope(),
+				metadataOnly.visitCountries(),
+				metadataOnly.tags(),
+				metadataOnly.visibilityMembers(),
+				updatedAt.plusHours(1)
+		);
+
+		assertThat(metadataOnly.aiModerationStatus()).isEqualTo(AiModerationStatus.VERIFIED);
+		assertThat(contentChanged.aiModerationStatus()).isEqualTo(AiModerationStatus.UNVERIFIED);
+	}
+
+	@Test
 	void replaceChildrenKeepsStoryAggregateHierarchy() {
 		LocalDateTime now = LocalDateTime.of(2026, 8, 23, 12, 0);
 		Story story = StoryTestFactory.create(author, VisibilityScope.PRIVATE)

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.planwith.planwith_fo_story.application.command.CreateStoryCommand;
+import com.planwith.planwith_fo_story.application.command.UpdateStoryCommand;
 import com.planwith.planwith_fo_story.domain.model.Story;
 import com.planwith.planwith_fo_story.domain.model.StoryPlace;
 import com.planwith.planwith_fo_story.domain.model.StoryPlaceImage;
@@ -39,6 +40,26 @@ final class StoryCreateMapper {
 				toCountries(command.countries(), now),
 				toTags(command.tags()),
 				toVisibilityMembers(command.visibilityMemberUuids(), now),
+				now
+		);
+	}
+
+	static Story toUpdatedStory(Story story, UpdateStoryCommand command, LocalDateTime now) {
+		boolean coreFieldsOnly = command.countries().isEmpty();
+		return story.update(
+				MemberUuid.of(command.actorUuid()),
+				command.scheduleUuid(),
+				command.scheduleVisible(),
+				command.title(),
+				command.content(),
+				command.coverImageUrl(),
+				command.startDate(),
+				command.endDate(),
+				coreFieldsOnly ? story.commentEnabled() : command.commentEnabled(),
+				coreFieldsOnly ? story.visibilityScope() : command.visibilityScope(),
+				coreFieldsOnly ? story.visitCountries() : toCountries(command.countries(), now),
+				coreFieldsOnly ? story.tags() : toTags(command.tags()),
+				coreFieldsOnly ? story.visibilityMembers() : toVisibilityMembers(command.visibilityMemberUuids(), now),
 				now
 		);
 	}

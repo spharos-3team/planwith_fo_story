@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.planwith.planwith_fo_story.application.port.out.StoryCommandPort;
 import com.planwith.planwith_fo_story.domain.model.AiModerationStatus;
 import com.planwith.planwith_fo_story.domain.model.Story;
+import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,15 @@ public class StoryCommandPersistenceAdapter implements StoryCommandPort {
 		Story saved = StoryPersistenceMapper.toDomain(storyRepository.save(entity));
 		log.debug("StoryCommandPersistenceAdapter : save : 스토리 저장 완료 - storyUuid={}", saved.storyUuid());
 		return saved;
+	}
+
+	@Override
+	@Transactional
+	public Story softDelete(Story story) {
+		StoryJpaEntity entity = storyRepository.findByStoryUuid(story.storyUuid().value())
+				.orElseThrow(() -> new StoryNotFoundException(story.storyUuid().asString()));
+		entity.applySoftDelete(story.deletedAt(), story.updatedAt());
+		return StoryPersistenceMapper.toDomain(storyRepository.save(entity));
 	}
 
 	@Override

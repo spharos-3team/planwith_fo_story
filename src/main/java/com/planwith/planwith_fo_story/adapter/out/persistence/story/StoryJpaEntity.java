@@ -249,6 +249,11 @@ class StoryJpaEntity {
 		this.updatedAt = updatedAt;
 	}
 
+	void applySoftDelete(LocalDateTime deletedAt, LocalDateTime updatedAt) {
+		this.deletedAt = deletedAt;
+		this.updatedAt = updatedAt;
+	}
+
 	void applyLikeCount(long storyLikeCount) {
 		this.storyLikeCount = storyLikeCount;
 	}

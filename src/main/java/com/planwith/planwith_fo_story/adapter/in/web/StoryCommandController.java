@@ -7,9 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +22,6 @@ import com.planwith.planwith_fo_story.application.command.ChangeStoryCommentEnab
 import com.planwith.planwith_fo_story.application.command.ChangeStoryVisibilityCommand;
 import com.planwith.planwith_fo_story.application.command.DeleteStoryCommand;
 import com.planwith.planwith_fo_story.application.command.IncreaseStoryViewCountCommand;
-import com.planwith.planwith_fo_story.application.command.UpdateStoryCommand;
 import com.planwith.planwith_fo_story.application.port.in.StoryCommandUseCase;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
 import com.planwith.planwith_fo_story.domain.exception.MemberAuthenticationRequiredException;
@@ -49,7 +47,6 @@ public class StoryCommandController {
 		return ResponseEntity.noContent().build();
 	}
 
-	// 스토리 생성
 	@PostMapping
 	public ResponseEntity<StoryDetailView> create(
 			@RequestHeader("X-Member-UUID") UUID actorUuid,
@@ -60,28 +57,16 @@ public class StoryCommandController {
 				.body(storyCommandUseCase.create(request.toCommand(requireActor(actorUuid))));
 	}
 
-	// 스토리 수정
-	@PutMapping("/{storyUuid}")
+	@PatchMapping("/{storyUuid}")
 	public ResponseEntity<StoryDetailView> update(
 			@RequestHeader("X-Member-UUID") UUID actorUuid,
 			@PathVariable UUID storyUuid,
 			@Valid @RequestBody UpdateStoryRequest request
 	) {
-		log.info("StoryCommandController : PUT update : 스토리 수정 요청");
-		return ResponseEntity.ok(storyCommandUseCase.update(new UpdateStoryCommand(
-				requireActor(actorUuid),
-				storyUuid,
-				request.scheduleUuid(),
-				request.resolvedScheduleVisible(),
-				request.title(),
-				request.content(),
-				request.coverImageUrl(),
-				request.startDate(),
-				request.endDate()
-		)));
+		log.info("StoryCommandController : PATCH update : 스토리 수정 요청");
+		return ResponseEntity.ok(storyCommandUseCase.update(request.toCommand(requireActor(actorUuid), storyUuid)));
 	}
 
-	// 스토리 삭제
 	@DeleteMapping("/{storyUuid}")
 	public ResponseEntity<Void> delete(
 			@RequestHeader("X-Member-UUID") UUID actorUuid,
@@ -92,7 +77,6 @@ public class StoryCommandController {
 		return ResponseEntity.noContent().build();
 	}
 
-	// 스토리 공개범위 변경
 	@PatchMapping("/{storyUuid}/visibility")
 	public ResponseEntity<StoryDetailView> changeVisibility(
 			@RequestHeader("X-Member-UUID") UUID actorUuid,
@@ -107,7 +91,6 @@ public class StoryCommandController {
 		)));
 	}
 
-	// 스토리 댓글 허용 변경
 	@PatchMapping("/{storyUuid}/comment-enabled")
 	public ResponseEntity<StoryDetailView> changeCommentEnabled(
 			@RequestHeader("X-Member-UUID") UUID actorUuid,
