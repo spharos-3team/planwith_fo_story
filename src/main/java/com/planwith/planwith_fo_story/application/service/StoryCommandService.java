@@ -34,6 +34,7 @@ import com.planwith.planwith_fo_story.domain.exception.InvalidStoryStateExceptio
 import com.planwith.planwith_fo_story.domain.exception.ScheduleNotOwnedException;
 import com.planwith.planwith_fo_story.domain.exception.MemberAuthenticationRequiredException;
 import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
+import com.planwith.planwith_fo_story.domain.exception.StoryAccessDeniedException;
 import com.planwith.planwith_fo_story.domain.model.Story;
 import com.planwith.planwith_fo_story.domain.model.vo.MemberUuid;
 
@@ -91,19 +92,13 @@ public class StoryCommandService implements StoryCommandUseCase {
 	public StoryDetailView update(UpdateStoryCommand command) {
 		log.info("StoryCommandService : update : 스토리 수정 비즈니스 로직 시작 - storyUuid={}", command.storyUuid());
 		requireActor(command.actorUuid());
+		Story existing = loadActive(command.storyUuid());
+		if (!existing.isOwnedBy(MemberUuid.of(command.actorUuid()))) {
+			throw new StoryAccessDeniedException();
+		}
 		ensureOwnSchedule(command.scheduleUuid(), command.actorUuid());
 		LocalDateTime now = LocalDateTime.now(clock);
-		Story updated = loadActive(command.storyUuid()).update(
-				MemberUuid.of(command.actorUuid()),
-				command.scheduleUuid(),
-				command.scheduleVisible(),
-				command.title(),
-				command.content(),
-				command.coverImageUrl(),
-				command.startDate(),
-				command.endDate(),
-				now
-		);
+		Story updated = StoryCreateMapper.toUpdatedStory(existing, command, now);
 		Story saved = storyCommandPort.save(updated);
 		appendOutbox(StoryUpdatedEvent.EVENT_TYPE, StoryUpdatedEvent.of(
 				UUID.randomUUID().toString(),
@@ -112,6 +107,12 @@ public class StoryCommandService implements StoryCommandUseCase {
 				Instant.now(clock)
 		), saved);
 		evictCaches(saved);
+		if (command.aiVerificationRequested()) {
+			AfterCommitAction.run(() -> storyAiVerificationRequestPort.requestVerification(
+					saved.storyUuid().value(),
+					saved.memberUuid().value()
+			));
+		}
 		log.info("StoryCommandService : update : 스토리 수정 완료 - storyUuid={}", saved.storyUuid());
 		return toDetail(saved);
 	}
@@ -123,7 +124,7 @@ public class StoryCommandService implements StoryCommandUseCase {
 		requireActor(command.actorUuid());
 		Story deleted = loadActive(command.storyUuid())
 				.delete(MemberUuid.of(command.actorUuid()), LocalDateTime.now(clock));
-		Story saved = storyCommandPort.save(deleted);
+		Story saved = storyCommandPort.softDelete(deleted);
 		appendOutbox(StoryDeletedEvent.EVENT_TYPE, StoryDeletedEvent.of(
 				UUID.randomUUID().toString(),
 				saved.memberUuid().asString(),

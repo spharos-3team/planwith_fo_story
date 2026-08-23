@@ -11,6 +11,8 @@ public interface StoryCommandPort {
 
 	Story save(Story story);
 
+	Story softDelete(Story story);
+
 	Optional<Story> findByStoryUuid(UUID storyUuid);
 
 	Optional<Story> updateAiModerationStatus(UUID storyUuid, AiModerationStatus status, LocalDateTime updatedAt);

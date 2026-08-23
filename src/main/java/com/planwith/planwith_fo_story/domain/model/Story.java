@@ -202,11 +202,18 @@ public final class Story {
 			String coverImageUrl,
 			LocalDate startDate,
 			LocalDate endDate,
+			boolean commentEnabled,
+			VisibilityScope visibilityScope,
+			List<StoryVisitCountry> visitCountries,
+			List<StoryTag> tags,
+			List<StoryVisibilityMember> visibilityMembers,
 			LocalDateTime updatedAt
 	) {
 		ensureOwner(actor);
 		ensureActive();
-		return copy(
+		boolean moderationContentChanged = !this.title.equals(title == null ? null : title.trim())
+				|| !this.content.equals(content);
+		Story updated = copy(
 				scheduleUuid,
 				scheduleVisible,
 				title,
@@ -218,11 +225,15 @@ public final class Story {
 				visibilityScope,
 				updatedAt,
 				deletedAt,
-				visitCountries,
+				this.visitCountries,
 				places,
-				tags,
-				visibilityMembers
+				this.tags,
+				this.visibilityMembers
 		);
+		if (moderationContentChanged) {
+			updated = updated.applyAiModerationResult(AiModerationStatus.UNVERIFIED, updatedAt);
+		}
+		return updated.replaceChildren(visitCountries, tags, visibilityMembers, updatedAt);
 	}
 
 	public Story changeVisibility(MemberUuid actor, VisibilityScope visibilityScope, LocalDateTime updatedAt) {
