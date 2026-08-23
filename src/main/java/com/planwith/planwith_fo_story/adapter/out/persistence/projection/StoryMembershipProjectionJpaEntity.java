@@ -71,6 +71,8 @@ class StoryMembershipProjectionJpaEntity {
 	@Embeddable
 	static class StoryMembershipProjectionId implements Serializable {
 
+		private static final long serialVersionUID = 1L;
+
 		@JdbcTypeCode(SqlTypes.CHAR)
 		@Column(name = "member_uuid", length = 36)
 		private UUID memberUuid;

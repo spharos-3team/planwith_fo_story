@@ -16,8 +16,10 @@ class KafkaStoryEventPublisherTest {
 	void publishesPayloadToKafkaTopic() {
 		@SuppressWarnings("unchecked")
 		KafkaTemplate<String, String> kafkaTemplate = mock(KafkaTemplate.class);
+		@SuppressWarnings("unchecked")
+		SendResult<String, String> sendResult = mock(SendResult.class);
 		when(kafkaTemplate.send("planwith.story.created", "story-uuid", "{}"))
-				.thenReturn(CompletableFuture.completedFuture(mock(SendResult.class)));
+				.thenReturn(CompletableFuture.completedFuture(sendResult));
 
 		KafkaStoryEventPublisher publisher = new KafkaStoryEventPublisher(kafkaTemplate);
 		publisher.publish("planwith.story.created", "story-uuid", "{}");

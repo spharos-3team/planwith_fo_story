@@ -41,6 +41,7 @@ class RedisStoryQueryCacheAdapterTest {
 	private ValueOperations<String, String> valueOperations;
 	private RedisStoryQueryCacheAdapter adapter;
 
+	@SuppressWarnings("unchecked")
 	@BeforeEach
 	void setUp() {
 		redisTemplate = mock(StringRedisTemplate.class);
