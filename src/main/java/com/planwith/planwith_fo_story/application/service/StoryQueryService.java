@@ -18,12 +18,13 @@ import com.planwith.planwith_fo_story.application.query.StoryDetailView;
 import com.planwith.planwith_fo_story.application.query.StoryFeedView;
 import com.planwith.planwith_fo_story.application.query.StoryListView;
 import com.planwith.planwith_fo_story.application.query.StorySummaryView;
+import com.planwith.planwith_fo_story.domain.exception.StoryAccessDeniedException;
 import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
 import com.planwith.planwith_fo_story.domain.model.Story;
 import com.planwith.planwith_fo_story.domain.model.projection.MembershipEntitlementProjection;
 import com.planwith.planwith_fo_story.domain.model.vo.MemberUuid;
+import com.planwith.planwith_fo_story.domain.service.StoryAccessPolicy;
 import com.planwith.planwith_fo_story.domain.service.StorySchedulePolicy;
-import com.planwith.planwith_fo_story.domain.service.StoryVisibilityPolicy;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,7 +37,7 @@ public class StoryQueryService implements StoryQueryUseCase {
 	private final StoryQueryCachePort storyQueryCachePort;
 	private final MemberProfileProjectionPort memberProfileProjectionPort;
 	private final MembershipEntitlementProjectionPort membershipEntitlementProjectionPort;
-	private final StoryVisibilityPolicy visibilityPolicy;
+	private final StoryAccessPolicy accessPolicy;
 	private final StorySchedulePolicy schedulePolicy;
 
 	public StoryQueryService(
@@ -49,7 +50,7 @@ public class StoryQueryService implements StoryQueryUseCase {
 		this.storyQueryCachePort = storyQueryCachePort;
 		this.memberProfileProjectionPort = memberProfileProjectionPort;
 		this.membershipEntitlementProjectionPort = membershipEntitlementProjectionPort;
-		this.visibilityPolicy = new StoryVisibilityPolicy();
+		this.accessPolicy = new StoryAccessPolicy();
 		this.schedulePolicy = new StorySchedulePolicy();
 	}
 
@@ -57,7 +58,7 @@ public class StoryQueryService implements StoryQueryUseCase {
 	public StoryDetailView getDetail(GetStoryDetailQuery query) {
 		log.debug("StoryQueryService : getDetail : 스토리 상세 조회 시작 - storyUuid={}", query.storyUuid());
 		StoryDetailView view = storyQueryCachePort.findDetail(query.storyUuid())
-				.filter(cached -> canViewCached(cached, query.viewerUuid()))
+				.map(cached -> requireReadable(cached, query.viewerUuid(), query.storyUuid()))
 				.orElseGet(() -> loadDetailFromDb(query));
 		return maskScheduleForViewer(view, query.viewerUuid());
 	}
@@ -68,7 +69,7 @@ public class StoryQueryService implements StoryQueryUseCase {
 		List<StorySummaryView> items = storyQueryPort
 				.findActiveByMemberUuid(query.authorUuid(), query.offset(), query.resolvedSize())
 				.stream()
-				.filter(story -> canView(story, query.viewerUuid()))
+				.filter(story -> canRead(story, query.viewerUuid()))
 				.map(this::toSummary)
 				.toList();
 		return new StoryListView(items, query.page(), query.resolvedSize());
@@ -87,8 +88,9 @@ public class StoryQueryService implements StoryQueryUseCase {
 	private StoryDetailView loadDetailFromDb(GetStoryDetailQuery query) {
 		Story story = storyQueryPort.findActiveByStoryUuid(query.storyUuid())
 				.orElseThrow(() -> new StoryNotFoundException(query.storyUuid().toString()));
-		if (!canView(story, query.viewerUuid())) {
-			throw new StoryNotFoundException(query.storyUuid().toString());
+		if (!canRead(story, query.viewerUuid())) {
+			log.info("StoryQueryService : getDetail : 스토리 조회 권한 없음 - storyUuid={}", query.storyUuid());
+			throw new StoryAccessDeniedException();
 		}
 		StoryDetailView view = toDetail(story);
 		storyQueryCachePort.saveDetail(query.storyUuid(), view);
@@ -99,7 +101,7 @@ public class StoryQueryService implements StoryQueryUseCase {
 		List<StorySummaryView> items = storyQueryPort
 				.findRecentActive(query.offset(), query.resolvedSize())
 				.stream()
-				.filter(story -> canView(story, query.viewerUuid()))
+				.filter(story -> canRead(story, query.viewerUuid()))
 				.map(this::toSummary)
 				.toList();
 		StoryFeedView view = new StoryFeedView(items, query.page(), query.resolvedSize());
@@ -109,28 +111,50 @@ public class StoryQueryService implements StoryQueryUseCase {
 		return view;
 	}
 
-	private boolean canView(Story story, UUID viewerUuid) {
-		MemberUuid viewer = viewerUuid == null ? null : MemberUuid.of(viewerUuid);
-		boolean entitled = viewerUuid != null && membershipEntitlementProjectionPort
-				.findByMemberAndCreator(viewerUuid, story.memberUuid().value())
-				.map(MembershipEntitlementProjection::canViewMembershipStories)
-				.orElse(false);
-		return visibilityPolicy.canView(story, viewer, entitled);
+	private StoryDetailView requireReadable(StoryDetailView view, UUID viewerUuid, UUID storyUuid) {
+		if (canRead(view, viewerUuid)) {
+			return view;
+		}
+		log.info("StoryQueryService : getDetail : 스토리 조회 권한 없음 - storyUuid={}", storyUuid);
+		throw new StoryAccessDeniedException();
 	}
 
-	private boolean canViewCached(StoryDetailView view, UUID viewerUuid) {
-		if (viewerUuid != null && view.memberUuid().equals(viewerUuid.toString())) {
-			return true;
+	private boolean canRead(Story story, UUID viewerUuid) {
+		return accessPolicy.canRead(
+				story,
+				toViewer(viewerUuid),
+				hasMembershipEntitlement(viewerUuid, story.memberUuid().value())
+		);
+	}
+
+	private boolean canRead(StoryDetailView view, UUID viewerUuid) {
+		return accessPolicy.canRead(
+				MemberUuid.of(view.memberUuid()),
+				view.visibilityScope(),
+				visibilityMembersOf(view),
+				toViewer(viewerUuid),
+				hasMembershipEntitlement(viewerUuid, UUID.fromString(view.memberUuid()))
+		);
+	}
+
+	private boolean hasMembershipEntitlement(UUID viewerUuid, UUID authorUuid) {
+		if (viewerUuid == null) {
+			return false;
 		}
-		return switch (view.visibilityScope()) {
-			case ALL -> true;
-			case PRIVATE -> false;
-			case MEMBER -> viewerUuid != null;
-			case MEMBERSHIP -> viewerUuid != null && membershipEntitlementProjectionPort
-					.findByMemberAndCreator(viewerUuid, UUID.fromString(view.memberUuid()))
-					.map(MembershipEntitlementProjection::canViewMembershipStories)
-					.orElse(false);
-		};
+		return membershipEntitlementProjectionPort.findByMemberAndCreator(viewerUuid, authorUuid)
+				.map(MembershipEntitlementProjection::canViewMembershipStories)
+				.orElse(false);
+	}
+
+	private static MemberUuid toViewer(UUID viewerUuid) {
+		return viewerUuid == null ? null : MemberUuid.of(viewerUuid);
+	}
+
+	private static List<MemberUuid> visibilityMembersOf(StoryDetailView view) {
+		if (view.visibilityMemberUuids() == null) {
+			return List.of();
+		}
+		return view.visibilityMemberUuids().stream().map(MemberUuid::of).toList();
 	}
 
 	private StoryDetailView maskScheduleForViewer(StoryDetailView view, UUID viewerUuid) {
