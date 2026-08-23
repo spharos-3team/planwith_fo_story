@@ -12,10 +12,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.planwith.planwith_fo_story.adapter.in.web.dto.StoryDetailResponse;
+import com.planwith.planwith_fo_story.adapter.in.web.dto.StoryListResponse;
 import com.planwith.planwith_fo_story.application.port.in.StoryQueryUseCase;
 import com.planwith.planwith_fo_story.application.query.GetStoryDetailQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryListQuery;
-import com.planwith.planwith_fo_story.application.query.StoryListView;
+import com.planwith.planwith_fo_story.application.query.StorySortType;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -45,14 +46,17 @@ public class StoryQueryController {
 
 	// 스토리 목록 조회
 	@GetMapping
-	public ResponseEntity<StoryListView> getList(
+	public ResponseEntity<StoryListResponse> getList(
 			@RequestHeader(value = "X-Member-UUID", required = false) UUID viewerUuid,
-			@RequestParam UUID authorUuid,
+			@RequestParam(required = false) UUID authorUuid,
 			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(defaultValue = "LATEST") StorySortType sort
 	) {
 		log.info("StoryQueryController : GET getList : 스토리 목록 조회 요청");
-		return ResponseEntity.ok(storyQueryUseCase.getList(new GetStoryListQuery(authorUuid, viewerUuid, page, size)));
+		return ResponseEntity.ok(StoryListResponse.from(
+				storyQueryUseCase.getList(new GetStoryListQuery(authorUuid, viewerUuid, page, size, sort))
+		));
 	}
 
 }

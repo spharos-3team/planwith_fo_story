@@ -1,6 +1,10 @@
 package com.planwith.planwith_fo_story.adapter.out.persistence.projection;
 
 import java.util.Optional;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -44,13 +48,31 @@ public class MemberProfileProjectionAdapter implements MemberProfileProjectionPo
 	@Transactional(readOnly = true)
 	public Optional<MemberProfileProjection> findByMemberUuid(UUID memberUuid) {
 		return repository.findById(memberUuid)
-				.map(entity -> new MemberProfileProjection(
-						MemberUuid.of(entity.memberUuid()),
-						entity.nickname(),
-						entity.profileImage(),
-						entity.memberStatus(),
-						entity.sourceVersion(),
-						entity.synchronizedAt()
+				.map(this::toProjection);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Map<UUID, MemberProfileProjection> findByMemberUuids(Set<UUID> memberUuids) {
+		if (memberUuids.isEmpty()) {
+			return Map.of();
+		}
+		return repository.findAllById(memberUuids).stream()
+				.map(this::toProjection)
+				.collect(Collectors.toUnmodifiableMap(
+						projection -> projection.memberUuid().value(),
+						Function.identity()
 				));
+	}
+
+	private MemberProfileProjection toProjection(StoryMemberProjectionJpaEntity entity) {
+		return new MemberProfileProjection(
+				MemberUuid.of(entity.memberUuid()),
+				entity.nickname(),
+				entity.profileImage(),
+				entity.memberStatus(),
+				entity.sourceVersion(),
+				entity.synchronizedAt()
+		);
 	}
 }

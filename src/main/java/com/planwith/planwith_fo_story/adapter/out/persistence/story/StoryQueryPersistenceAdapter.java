@@ -2,6 +2,7 @@ package com.planwith.planwith_fo_story.adapter.out.persistence.story;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.PageRequest;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.planwith.planwith_fo_story.application.port.out.StoryQueryPort;
+import com.planwith.planwith_fo_story.application.query.StorySortType;
 import com.planwith.planwith_fo_story.domain.model.Story;
 
 import lombok.RequiredArgsConstructor;
@@ -55,6 +57,35 @@ public class StoryQueryPersistenceAdapter implements StoryQueryPort {
 				.stream()
 				.map(StoryPersistenceMapper::toDomain)
 				.toList();
+	}
+
+	@Override
+	public List<Story> findActive(Set<UUID> authorUuids, StorySortType sort, int offset, int size) {
+		PageRequest page = page(offset, size);
+		List<StoryJpaEntity> entities = authorUuids == null
+				? findAllActive(sort, page)
+				: findByAuthors(authorUuids, sort, page);
+		return entities.stream().map(StoryPersistenceMapper::toDomain).toList();
+	}
+
+	private List<StoryJpaEntity> findAllActive(StorySortType sort, PageRequest page) {
+		return switch (sort) {
+			case LATEST -> storyRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(page);
+			case VIEW -> storyRepository.findByDeletedAtIsNullOrderByViewCountDescCreatedAtDesc(page);
+			case LIKE -> storyRepository.findByDeletedAtIsNullOrderByStoryLikeCountDescCreatedAtDesc(page);
+		};
+	}
+
+	private List<StoryJpaEntity> findByAuthors(Set<UUID> authorUuids, StorySortType sort, PageRequest page) {
+		if (authorUuids.isEmpty()) {
+			return List.of();
+		}
+		List<UUID> authors = List.copyOf(authorUuids);
+		return switch (sort) {
+			case LATEST -> storyRepository.findByMemberUuidInAndDeletedAtIsNullOrderByCreatedAtDesc(authors, page);
+			case VIEW -> storyRepository.findByMemberUuidInAndDeletedAtIsNullOrderByViewCountDescCreatedAtDesc(authors, page);
+			case LIKE -> storyRepository.findByMemberUuidInAndDeletedAtIsNullOrderByStoryLikeCountDescCreatedAtDesc(authors, page);
+		};
 	}
 
 	private static PageRequest page(int offset, int size) {

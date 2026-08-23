@@ -1,7 +1,11 @@
 package com.planwith.planwith_fo_story.application.service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,19 +13,25 @@ import org.springframework.transaction.annotation.Transactional;
 import com.planwith.planwith_fo_story.application.port.in.StoryQueryUseCase;
 import com.planwith.planwith_fo_story.application.port.out.MemberProfileProjectionPort;
 import com.planwith.planwith_fo_story.application.port.out.MembershipEntitlementProjectionPort;
+import com.planwith.planwith_fo_story.application.port.out.StoryFeedMemberQueryPort;
+import com.planwith.planwith_fo_story.application.port.out.StoryFeedMembershipQueryPort;
 import com.planwith.planwith_fo_story.application.port.out.StoryQueryCachePort;
 import com.planwith.planwith_fo_story.application.port.out.StoryQueryPort;
 import com.planwith.planwith_fo_story.application.query.GetStoryDetailQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryFeedQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryListQuery;
 import com.planwith.planwith_fo_story.application.query.StoryDetailView;
+import com.planwith.planwith_fo_story.application.query.StoryFeedType;
 import com.planwith.planwith_fo_story.application.query.StoryFeedView;
 import com.planwith.planwith_fo_story.application.query.StoryListView;
+import com.planwith.planwith_fo_story.application.query.StorySortType;
 import com.planwith.planwith_fo_story.application.query.StorySummaryView;
 import com.planwith.planwith_fo_story.domain.exception.StoryAccessDeniedException;
 import com.planwith.planwith_fo_story.domain.exception.StoryNotFoundException;
 import com.planwith.planwith_fo_story.domain.model.Story;
+import com.planwith.planwith_fo_story.domain.model.VisibilityScope;
 import com.planwith.planwith_fo_story.domain.model.projection.MembershipEntitlementProjection;
+import com.planwith.planwith_fo_story.domain.model.projection.MemberProfileProjection;
 import com.planwith.planwith_fo_story.domain.model.vo.MemberUuid;
 import com.planwith.planwith_fo_story.domain.service.StoryAccessPolicy;
 import com.planwith.planwith_fo_story.domain.service.StorySchedulePolicy;
@@ -33,10 +43,14 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional(readOnly = true)
 public class StoryQueryService implements StoryQueryUseCase {
 
+	private static final int QUERY_BATCH_SIZE = 100;
+
 	private final StoryQueryPort storyQueryPort;
 	private final StoryQueryCachePort storyQueryCachePort;
 	private final MemberProfileProjectionPort memberProfileProjectionPort;
 	private final MembershipEntitlementProjectionPort membershipEntitlementProjectionPort;
+	private final StoryFeedMemberQueryPort storyFeedMemberQueryPort;
+	private final StoryFeedMembershipQueryPort storyFeedMembershipQueryPort;
 	private final StoryAccessPolicy accessPolicy;
 	private final StorySchedulePolicy schedulePolicy;
 
@@ -44,27 +58,28 @@ public class StoryQueryService implements StoryQueryUseCase {
 			StoryQueryPort storyQueryPort,
 			StoryQueryCachePort storyQueryCachePort,
 			MemberProfileProjectionPort memberProfileProjectionPort,
-			MembershipEntitlementProjectionPort membershipEntitlementProjectionPort
+			MembershipEntitlementProjectionPort membershipEntitlementProjectionPort,
+			StoryFeedMemberQueryPort storyFeedMemberQueryPort,
+			StoryFeedMembershipQueryPort storyFeedMembershipQueryPort
 	) {
 		this.storyQueryPort = storyQueryPort;
 		this.storyQueryCachePort = storyQueryCachePort;
 		this.memberProfileProjectionPort = memberProfileProjectionPort;
 		this.membershipEntitlementProjectionPort = membershipEntitlementProjectionPort;
+		this.storyFeedMemberQueryPort = storyFeedMemberQueryPort;
+		this.storyFeedMembershipQueryPort = storyFeedMembershipQueryPort;
 		this.accessPolicy = new StoryAccessPolicy();
 		this.schedulePolicy = new StorySchedulePolicy();
 	}
 
 	@Override
 	public StoryDetailView getDetail(GetStoryDetailQuery query) {
-		log.debug("StoryQueryService : getDetail : 스토리 상세 조회 시작 - storyUuid={}", query.storyUuid());
 		Story story = storyQueryPort.findByStoryUuid(query.storyUuid())
 				.orElseThrow(() -> new StoryNotFoundException(query.storyUuid().toString()));
 		if (story.isDeleted()) {
-			log.debug("StoryQueryService : getDetail : 삭제된 스토리라 조회 불가 - storyUuid={}", query.storyUuid());
 			throw new StoryNotFoundException(query.storyUuid().toString());
 		}
 		if (!canRead(story, query.viewerUuid())) {
-			log.info("StoryQueryService : getDetail : 스토리 조회 권한 없음 - storyUuid={}", query.storyUuid());
 			throw new StoryAccessDeniedException();
 		}
 		StoryDetailView view = toDetail(story);
@@ -74,45 +89,87 @@ public class StoryQueryService implements StoryQueryUseCase {
 
 	@Override
 	public StoryListView getList(GetStoryListQuery query) {
-		log.debug("StoryQueryService : getList : 스토리 목록 조회 시작 - authorUuid={}", query.authorUuid());
-		List<StorySummaryView> items = storyQueryPort
-				.findActiveByMemberUuid(query.authorUuid(), query.offset(), query.resolvedSize())
-				.stream()
-				.filter(story -> canRead(story, query.viewerUuid()))
-				.map(this::toSummary)
-				.toList();
-		return new StoryListView(items, query.page(), query.resolvedSize());
+		Set<UUID> authors = query.authorUuid() == null ? null : Set.of(query.authorUuid());
+		List<Story> stories = findReadableStories(
+				authors,
+				query.sort(),
+				query.viewerUuid(),
+				query.offset(),
+				query.resolvedSize(),
+				story -> true
+		);
+		List<StorySummaryView> items = toSummaries(stories);
+		return new StoryListView(items, Math.max(0, query.page()), query.resolvedSize());
 	}
 
 	@Override
 	public StoryFeedView getFeed(GetStoryFeedQuery query) {
-		log.debug("StoryQueryService : getFeed : 스토리 피드 조회 시작");
-		if (query.viewerUuid() != null) {
-			return storyQueryCachePort.findFeed(query.viewerUuid())
-					.orElseGet(() -> loadFeedFromDb(query));
-		}
-		return loadFeedFromDb(query);
+		Set<UUID> authors = resolveFeedAuthors(query.feedType(), query.viewerUuid());
+		Predicate<Story> feedCondition = query.feedType() == StoryFeedType.MEMBERSHIP
+				? story -> story.visibilityScope() == VisibilityScope.MEMBERSHIP
+				: story -> true;
+		List<Story> stories = findReadableStories(
+				authors,
+				query.sort(),
+				query.viewerUuid(),
+				query.offset(),
+				query.resolvedSize(),
+				feedCondition
+		);
+		List<StorySummaryView> items = toSummaries(stories);
+		return new StoryFeedView(items, Math.max(0, query.page()), query.resolvedSize());
 	}
 
-	private StoryFeedView loadFeedFromDb(GetStoryFeedQuery query) {
-		List<StorySummaryView> items = storyQueryPort
-				.findRecentActive(query.offset(), query.resolvedSize())
-				.stream()
-				.filter(story -> canRead(story, query.viewerUuid()))
-				.map(this::toSummary)
-				.toList();
-		StoryFeedView view = new StoryFeedView(items, query.page(), query.resolvedSize());
-		if (query.viewerUuid() != null) {
-			storyQueryCachePort.saveFeed(query.viewerUuid(), view);
+	private Set<UUID> resolveFeedAuthors(StoryFeedType feedType, UUID viewerUuid) {
+		if (feedType == StoryFeedType.FOLLOWING) {
+			return storyFeedMemberQueryPort.findEligibleFollowingAuthors(viewerUuid).orElse(null);
 		}
-		return view;
+		Set<UUID> joinedCreators = storyFeedMembershipQueryPort.findJoinedCreatorUuids(viewerUuid);
+		if (joinedCreators.isEmpty()) {
+			return Set.of();
+		}
+		return storyFeedMemberQueryPort.filterEligibleAuthors(joinedCreators).orElse(Set.of());
+	}
+
+	private List<Story> findReadableStories(
+			Set<UUID> authors,
+			StorySortType sort,
+			UUID viewerUuid,
+			int offset,
+			int size,
+			Predicate<Story> feedCondition
+	) {
+		if (authors != null && authors.isEmpty()) {
+			return List.of();
+		}
+		int required = offset + size;
+		int queryOffset = 0;
+		List<Story> readable = new ArrayList<>(required);
+		while (readable.size() < required) {
+			List<Story> candidates = storyQueryPort.findActive(authors, sort, queryOffset, QUERY_BATCH_SIZE);
+			for (Story story : candidates) {
+				if (feedCondition.test(story) && canRead(story, viewerUuid)) {
+					readable.add(story);
+				}
+			}
+			if (candidates.size() < QUERY_BATCH_SIZE) {
+				break;
+			}
+			queryOffset += QUERY_BATCH_SIZE;
+		}
+		if (offset >= readable.size()) {
+			return List.of();
+		}
+		return List.copyOf(readable.subList(offset, Math.min(required, readable.size())));
 	}
 
 	private boolean canRead(Story story, UUID viewerUuid) {
+		boolean membershipEntitled = story.visibilityScope() == VisibilityScope.MEMBERSHIP
+				&& hasMembershipEntitlement(viewerUuid, story.memberUuid().value());
 		return accessPolicy.canRead(
 				story,
 				toViewer(viewerUuid),
-				hasMembershipEntitlement(viewerUuid, story.memberUuid().value())
+				membershipEntitled
 		);
 	}
 
@@ -136,7 +193,6 @@ public class StoryQueryService implements StoryQueryUseCase {
 		if (schedulePolicy.canExposeScheduleReference(author, viewer, scheduleUuid, view.scheduleVisible())) {
 			return view;
 		}
-		log.debug("StoryQueryService : maskScheduleForViewer : 일정 UUID를 조회자에게 숨김 - storyUuid={}", view.storyUuid());
 		return view.hideScheduleReference();
 	}
 
@@ -147,10 +203,13 @@ public class StoryQueryService implements StoryQueryUseCase {
 		);
 	}
 
-	private StorySummaryView toSummary(Story story) {
-		return StoryViewMapper.toSummary(
-				story,
-				memberProfileProjectionPort.findByMemberUuid(story.memberUuid().value()).orElse(null)
-		);
+	private List<StorySummaryView> toSummaries(List<Story> stories) {
+		Set<UUID> authorUuids = stories.stream()
+				.map(story -> story.memberUuid().value())
+				.collect(java.util.stream.Collectors.toUnmodifiableSet());
+		Map<UUID, MemberProfileProjection> authors = memberProfileProjectionPort.findByMemberUuids(authorUuids);
+		return stories.stream()
+				.map(story -> StoryViewMapper.toSummary(story, authors.get(story.memberUuid().value())))
+				.toList();
 	}
 }
