@@ -8,6 +8,8 @@ import com.planwith.planwith_fo_story.domain.model.Story;
 
 public interface StoryQueryPort {
 
+	Optional<Story> findByStoryUuid(UUID storyUuid);
+
 	Optional<Story> findActiveByStoryUuid(UUID storyUuid);
 
 	List<Story> findActiveByMemberUuid(UUID memberUuid, int offset, int size);

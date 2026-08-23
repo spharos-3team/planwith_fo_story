@@ -57,9 +57,18 @@ public class StoryQueryService implements StoryQueryUseCase {
 	@Override
 	public StoryDetailView getDetail(GetStoryDetailQuery query) {
 		log.debug("StoryQueryService : getDetail : 스토리 상세 조회 시작 - storyUuid={}", query.storyUuid());
-		StoryDetailView view = storyQueryCachePort.findDetail(query.storyUuid())
-				.map(cached -> requireReadable(cached, query.viewerUuid(), query.storyUuid()))
-				.orElseGet(() -> loadDetailFromDb(query));
+		Story story = storyQueryPort.findByStoryUuid(query.storyUuid())
+				.orElseThrow(() -> new StoryNotFoundException(query.storyUuid().toString()));
+		if (story.isDeleted()) {
+			log.debug("StoryQueryService : getDetail : 삭제된 스토리라 조회 불가 - storyUuid={}", query.storyUuid());
+			throw new StoryNotFoundException(query.storyUuid().toString());
+		}
+		if (!canRead(story, query.viewerUuid())) {
+			log.info("StoryQueryService : getDetail : 스토리 조회 권한 없음 - storyUuid={}", query.storyUuid());
+			throw new StoryAccessDeniedException();
+		}
+		StoryDetailView view = toDetail(story);
+		storyQueryCachePort.saveDetail(query.storyUuid(), view);
 		return maskScheduleForViewer(view, query.viewerUuid());
 	}
 
@@ -85,18 +94,6 @@ public class StoryQueryService implements StoryQueryUseCase {
 		return loadFeedFromDb(query);
 	}
 
-	private StoryDetailView loadDetailFromDb(GetStoryDetailQuery query) {
-		Story story = storyQueryPort.findActiveByStoryUuid(query.storyUuid())
-				.orElseThrow(() -> new StoryNotFoundException(query.storyUuid().toString()));
-		if (!canRead(story, query.viewerUuid())) {
-			log.info("StoryQueryService : getDetail : 스토리 조회 권한 없음 - storyUuid={}", query.storyUuid());
-			throw new StoryAccessDeniedException();
-		}
-		StoryDetailView view = toDetail(story);
-		storyQueryCachePort.saveDetail(query.storyUuid(), view);
-		return view;
-	}
-
 	private StoryFeedView loadFeedFromDb(GetStoryFeedQuery query) {
 		List<StorySummaryView> items = storyQueryPort
 				.findRecentActive(query.offset(), query.resolvedSize())
@@ -111,29 +108,11 @@ public class StoryQueryService implements StoryQueryUseCase {
 		return view;
 	}
 
-	private StoryDetailView requireReadable(StoryDetailView view, UUID viewerUuid, UUID storyUuid) {
-		if (canRead(view, viewerUuid)) {
-			return view;
-		}
-		log.info("StoryQueryService : getDetail : 스토리 조회 권한 없음 - storyUuid={}", storyUuid);
-		throw new StoryAccessDeniedException();
-	}
-
 	private boolean canRead(Story story, UUID viewerUuid) {
 		return accessPolicy.canRead(
 				story,
 				toViewer(viewerUuid),
 				hasMembershipEntitlement(viewerUuid, story.memberUuid().value())
-		);
-	}
-
-	private boolean canRead(StoryDetailView view, UUID viewerUuid) {
-		return accessPolicy.canRead(
-				MemberUuid.of(view.memberUuid()),
-				view.visibilityScope(),
-				visibilityMembersOf(view),
-				toViewer(viewerUuid),
-				hasMembershipEntitlement(viewerUuid, UUID.fromString(view.memberUuid()))
 		);
 	}
 
@@ -148,13 +127,6 @@ public class StoryQueryService implements StoryQueryUseCase {
 
 	private static MemberUuid toViewer(UUID viewerUuid) {
 		return viewerUuid == null ? null : MemberUuid.of(viewerUuid);
-	}
-
-	private static List<MemberUuid> visibilityMembersOf(StoryDetailView view) {
-		if (view.visibilityMemberUuids() == null) {
-			return List.of();
-		}
-		return view.visibilityMemberUuids().stream().map(MemberUuid::of).toList();
 	}
 
 	private StoryDetailView maskScheduleForViewer(StoryDetailView view, UUID viewerUuid) {

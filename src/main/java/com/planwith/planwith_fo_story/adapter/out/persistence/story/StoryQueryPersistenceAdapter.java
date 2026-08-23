@@ -21,6 +21,12 @@ public class StoryQueryPersistenceAdapter implements StoryQueryPort {
 	private final SpringDataStoryRepository storyRepository;
 
 	@Override
+	public Optional<Story> findByStoryUuid(UUID storyUuid) {
+		return storyRepository.findByStoryUuid(storyUuid)
+				.map(StoryPersistenceMapper::toDomain);
+	}
+
+	@Override
 	public Optional<Story> findActiveByStoryUuid(UUID storyUuid) {
 		return storyRepository.findByStoryUuidAndDeletedAtIsNull(storyUuid)
 				.map(StoryPersistenceMapper::toDomain);

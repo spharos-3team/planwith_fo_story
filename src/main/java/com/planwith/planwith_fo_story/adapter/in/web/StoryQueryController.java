@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.planwith.planwith_fo_story.adapter.in.web.dto.StoryDetailResponse;
 import com.planwith.planwith_fo_story.application.port.in.StoryQueryUseCase;
 import com.planwith.planwith_fo_story.application.query.GetStoryDetailQuery;
 import com.planwith.planwith_fo_story.application.query.GetStoryListQuery;
-import com.planwith.planwith_fo_story.application.query.StoryDetailView;
 import com.planwith.planwith_fo_story.application.query.StoryListView;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,12 +33,14 @@ public class StoryQueryController {
 
 	// 스토리 상세 조회
 	@GetMapping("/{storyUuid}")
-	public ResponseEntity<StoryDetailView> getDetail(
+	public ResponseEntity<StoryDetailResponse> getDetail(
 			@RequestHeader(value = "X-Member-UUID", required = false) UUID viewerUuid,
 			@PathVariable UUID storyUuid
 	) {
 		log.info("StoryQueryController : GET getDetail : 스토리 상세 조회 요청");
-		return ResponseEntity.ok(storyQueryUseCase.getDetail(new GetStoryDetailQuery(storyUuid, viewerUuid)));
+		return ResponseEntity.ok(StoryDetailResponse.from(
+				storyQueryUseCase.getDetail(new GetStoryDetailQuery(storyUuid, viewerUuid))
+		));
 	}
 
 	// 스토리 목록 조회
