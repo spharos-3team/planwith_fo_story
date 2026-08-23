@@ -111,6 +111,27 @@ story:
     ownership-check-enabled: ${STORY_SCHEDULE_OWNERSHIP_CHECK_ENABLED:false}
     base-url: ${SCHEDULE_SERVICE_URL:}
     ownership-path: ${STORY_SCHEDULE_OWNERSHIP_PATH:/api/schedules/{scheduleUuid}/owners/{memberUuid}}
+  detail-screen:
+    member:
+      query-enabled: ${STORY_DETAIL_SCREEN_MEMBER_QUERY_ENABLED:false}
+      base-url: ${MEMBER_SERVICE_URL:}
+      profile-path: ${STORY_DETAIL_SCREEN_MEMBER_PROFILE_PATH:/api/members/{memberUuid}/profile}
+    follow:
+      query-enabled: ${STORY_DETAIL_SCREEN_FOLLOW_QUERY_ENABLED:false}
+      base-url: ${FOLLOW_SERVICE_URL:}
+      summary-path: ${STORY_DETAIL_SCREEN_FOLLOW_SUMMARY_PATH:/api/members/{memberUuid}/follow-summary}
+    schedule:
+      query-enabled: ${STORY_DETAIL_SCREEN_SCHEDULE_QUERY_ENABLED:false}
+      base-url: ${SCHEDULE_SERVICE_URL:}
+      detail-path: ${STORY_DETAIL_SCREEN_SCHEDULE_DETAIL_PATH:/api/schedules/{scheduleUuid}}
+    like:
+      query-enabled: ${STORY_DETAIL_SCREEN_LIKE_QUERY_ENABLED:false}
+      base-url: ${LIKE_SERVICE_URL:}
+      status-path: ${STORY_DETAIL_SCREEN_LIKE_STATUS_PATH:/api/stories/{storyUuid}/likes/me}
+    comment:
+      query-enabled: ${STORY_DETAIL_SCREEN_COMMENT_QUERY_ENABLED:false}
+      base-url: ${COMMENT_SERVICE_URL:}
+      list-path: ${STORY_DETAIL_SCREEN_COMMENT_LIST_PATH:/api/stories/{storyUuid}/comments}
   cache:
     key-prefix: ${STORY_CACHE_KEY_PREFIX:story}
     detail-namespace: ${STORY_CACHE_DETAIL_NAMESPACE:detail}
