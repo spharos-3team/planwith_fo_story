@@ -19,13 +19,11 @@ public record CreateStoryCommand(
 		VisibilityScope visibilityScope,
 		boolean aiVerificationRequested,
 		List<Country> countries,
-		List<Place> places,
 		List<String> tags,
 		List<UUID> visibilityMemberUuids
 ) {
 	public CreateStoryCommand {
 		countries = countries == null ? List.of() : List.copyOf(countries);
-		places = places == null ? List.of() : List.copyOf(places);
 		tags = tags == null ? List.of() : List.copyOf(tags);
 		visibilityMemberUuids = visibilityMemberUuids == null ? List.of() : List.copyOf(visibilityMemberUuids);
 	}
@@ -42,8 +40,12 @@ public record CreateStoryCommand(
 
 	public record City(
 			String cityName,
-			int displayOrder
+			int displayOrder,
+			List<Place> places
 	) {
+		public City {
+			places = places == null ? List.of() : List.copyOf(places);
+		}
 	}
 
 	public record Place(

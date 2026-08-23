@@ -108,9 +108,6 @@ class StoryJpaEntity {
 	private List<StoryVisitCountryJpaEntity> visitCountries = new ArrayList<>();
 
 	@OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<StoryPlaceJpaEntity> places = new ArrayList<>();
-
-	@OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<StoryTagJpaEntity> tags = new ArrayList<>();
 
 	@OneToMany(mappedBy = "story", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -199,10 +196,6 @@ class StoryJpaEntity {
 		return visitCountries;
 	}
 
-	List<StoryPlaceJpaEntity> places() {
-		return places;
-	}
-
 	List<StoryTagJpaEntity> tags() {
 		return tags;
 	}
@@ -258,11 +251,6 @@ class StoryJpaEntity {
 	void replaceVisitCountries(List<StoryVisitCountryJpaEntity> next) {
 		this.visitCountries.clear();
 		this.visitCountries.addAll(next);
-	}
-
-	void replacePlaces(List<StoryPlaceJpaEntity> next) {
-		this.places.clear();
-		this.places.addAll(next);
 	}
 
 	void replaceTags(List<StoryTagJpaEntity> next) {

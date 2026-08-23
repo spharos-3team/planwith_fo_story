@@ -82,7 +82,10 @@ public class StoryCommonValidator {
 			List<StoryVisibilityMember> visibilityMembers
 	) {
 		validateVisitCountries(visitCountries);
-		validatePlaces(places);
+		List<StoryPlace> resolvedPlaces = emptyIfNull(places).isEmpty()
+				? flattenPlaces(visitCountries)
+				: emptyIfNull(places);
+		validatePlaces(resolvedPlaces);
 		validateTags(tags);
 		validateVisibilityMembers(visibilityScope, visibilityMembers);
 	}
@@ -176,6 +179,13 @@ public class StoryCommonValidator {
 		if (value == null || value.isBlank()) {
 			throw new InvalidStoryStateException(fieldName + "은 필수입니다.");
 		}
+	}
+
+	private List<StoryPlace> flattenPlaces(List<StoryVisitCountry> visitCountries) {
+		return emptyIfNull(visitCountries).stream()
+				.flatMap(country -> emptyIfNull(country.cities()).stream())
+				.flatMap(city -> emptyIfNull(city.places()).stream())
+				.toList();
 	}
 
 	private static String normalizeName(String value) {

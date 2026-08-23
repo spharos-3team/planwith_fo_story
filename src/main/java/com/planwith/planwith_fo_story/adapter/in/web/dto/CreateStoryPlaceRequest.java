@@ -14,6 +14,7 @@ public record CreateStoryPlaceRequest(
 		String placeName,
 		Integer displayOrder,
 		@Valid
+		@Size(max = 5, message = "장소 이미지는 장소당 최대 5개까지 허용됩니다.")
 		List<CreateStoryPlaceImageRequest> images
 ) {
 }

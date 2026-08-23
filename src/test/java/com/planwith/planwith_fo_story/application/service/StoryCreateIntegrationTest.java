@@ -70,12 +70,15 @@ class StoryCreateIntegrationTest {
 				List.of(new CreateStoryCommand.Country(
 						"Korea",
 						0,
-						List.of(new CreateStoryCommand.City("Busan", 0))
-				)),
-				List.of(new CreateStoryCommand.Place(
-						"해운대",
-						0,
-						List.of(new CreateStoryCommand.PlaceImage("https://img.example/1.png", 1))
+						List.of(new CreateStoryCommand.City(
+								"Busan",
+								0,
+								List.of(new CreateStoryCommand.Place(
+										"해운대",
+										0,
+										List.of(new CreateStoryCommand.PlaceImage("https://img.example/1.png", 1))
+								))
+						))
 				)),
 				List.of("여행"),
 				List.of(visibilityMemberUuid)
@@ -85,12 +88,15 @@ class StoryCreateIntegrationTest {
 		assertThat(created.aiModerationStatus()).isEqualTo(AiModerationStatus.UNVERIFIED);
 		assertThat(created.visitCountries()).singleElement().satisfies(country -> {
 			assertThat(country.countryName()).isEqualTo("Korea");
-			assertThat(country.cities()).extracting("cityName").containsExactly("Busan");
+			assertThat(country.cities()).singleElement().satisfies(city -> {
+				assertThat(city.cityName()).isEqualTo("Busan");
+				assertThat(city.places()).singleElement().satisfies(place -> {
+					assertThat(place.placeName()).isEqualTo("해운대");
+					assertThat(place.images()).extracting("imageUrl").containsExactly("https://img.example/1.png");
+				});
+			});
 		});
-		assertThat(created.places()).singleElement().satisfies(place -> {
-			assertThat(place.placeName()).isEqualTo("해운대");
-			assertThat(place.images()).extracting("imageUrl").containsExactly("https://img.example/1.png");
-		});
+		assertThat(created.places()).extracting("placeName").containsExactly("해운대");
 		assertThat(created.tags()).containsExactly("여행");
 		assertThat(created.visibilityMemberUuids()).containsExactly(visibilityMemberUuid.toString());
 		assertThat(storyRepository.count()).isEqualTo(1);
@@ -116,9 +122,8 @@ class StoryCreateIntegrationTest {
 				List.of(new CreateStoryCommand.Country(
 						"Korea",
 						0,
-						List.of(new CreateStoryCommand.City("Seoul", 0))
+						List.of(new CreateStoryCommand.City("Seoul", 0, List.of()))
 				)),
-				List.of(),
 				List.of(),
 				List.of()
 		);

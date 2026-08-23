@@ -43,13 +43,16 @@ class StoryDomainModelTest {
 						List.of(StoryVisitCountry.create(
 								"Korea",
 								0,
-								List.of(StoryVisitCity.create("Busan", 0))
-						)),
-						List.of(StoryPlace.create(
-								null,
-								"해운대",
-								0,
-								List.of(StoryPlaceImage.create("https://img.example/1.png", 1, now))
+								List.of(StoryVisitCity.create(
+										"Busan",
+										0,
+										List.of(StoryPlace.create(
+												null,
+												"해운대",
+												0,
+												List.of(StoryPlaceImage.create("https://img.example/1.png", 1, now))
+										))
+								))
 						)),
 						List.of(StoryTag.create("여행")),
 						List.of(StoryVisibilityMember.create(MemberUuid.of(UUID.randomUUID()), now)),
@@ -58,7 +61,10 @@ class StoryDomainModelTest {
 
 		assertThat(story.visitCountries()).singleElement().satisfies(country -> {
 			assertThat(country.countryName()).isEqualTo("Korea");
-			assertThat(country.cities()).extracting(StoryVisitCity::cityName).containsExactly("Busan");
+			assertThat(country.cities()).singleElement().satisfies(city -> {
+				assertThat(city.cityName()).isEqualTo("Busan");
+				assertThat(city.places()).extracting(StoryPlace::placeName).containsExactly("해운대");
+			});
 		});
 		assertThat(story.places()).extracting(StoryPlace::placeName).containsExactly("해운대");
 		assertThat(story.places().get(0).images()).extracting(StoryPlaceImage::imageOrder).containsExactly(1);
@@ -161,9 +167,78 @@ class StoryDomainModelTest {
 				),
 				List.of(),
 				List.of(),
-				List.of(),
 				now
 		)).isInstanceOf(InvalidStoryStateException.class)
 				.hasMessageContaining("방문국가");
+	}
+
+	@Test
+	void keepsCountryCityPlaceImageHierarchy() {
+		LocalDateTime now = LocalDateTime.of(2026, 8, 23, 12, 0);
+		Story story = StoryTestFactory.create(author, VisibilityScope.ALL)
+				.replaceChildren(
+						List.of(StoryVisitCountry.create(
+								"일본",
+								0,
+								List.of(
+										StoryVisitCity.create(
+												"도쿄",
+												0,
+												List.of(
+														StoryPlace.create(
+																null,
+																"시부야",
+																0,
+																List.of(
+																		StoryPlaceImage.create("https://img.example/1.png", 1, now),
+																		StoryPlaceImage.create("https://img.example/2.png", 2, now),
+																		StoryPlaceImage.create("https://img.example/3.png", 3, now)
+																)
+														),
+														StoryPlace.create(null, "도쿄타워", 1, List.of())
+												)
+										),
+										StoryVisitCity.create(
+												"오사카",
+												1,
+												List.of(StoryPlace.create(null, "도톤보리", 0, List.of()))
+										)
+								)
+						)),
+						List.of(StoryTag.create("여행"), StoryTag.create("일본")),
+						List.of(),
+						now
+				);
+
+		assertThat(story.visitCountries().get(0).cities()).extracting(StoryVisitCity::cityName)
+				.containsExactly("도쿄", "오사카");
+		assertThat(story.visitCountries().get(0).cities().get(0).places())
+				.extracting(StoryPlace::placeName)
+				.containsExactly("시부야", "도쿄타워");
+		assertThat(story.visitCountries().get(0).cities().get(0).places().get(0).images())
+				.extracting(StoryPlaceImage::imageOrder)
+				.containsExactly(1, 2, 3);
+		assertThat(story.places()).extracting(StoryPlace::placeName)
+				.containsExactly("시부야", "도쿄타워", "도톤보리");
+		assertThat(story.tags()).extracting(StoryTag::tagName).containsExactly("여행", "일본");
+	}
+
+	@Test
+	void rejectsMoreThanFivePlaceImages() {
+		LocalDateTime now = LocalDateTime.of(2026, 8, 23, 12, 0);
+		assertThatThrownBy(() -> StoryPlace.create(
+				null,
+				"시부야",
+				0,
+				List.of(
+						StoryPlaceImage.create("https://img.example/1.png", 1, now),
+						StoryPlaceImage.create("https://img.example/2.png", 2, now),
+						StoryPlaceImage.create("https://img.example/3.png", 3, now),
+						StoryPlaceImage.create("https://img.example/4.png", 4, now),
+						StoryPlaceImage.create("https://img.example/5.png", 5, now),
+						StoryPlaceImage.create("https://img.example/6.png", 1, now)
+				)
+		)).isInstanceOf(InvalidStoryStateException.class)
+				.hasMessageContaining("최대 5개");
 	}
 }

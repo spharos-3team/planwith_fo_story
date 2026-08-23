@@ -1,5 +1,7 @@
 package com.planwith.planwith_fo_story.adapter.out.persistence.story;
 
+import java.util.List;
+
 import com.planwith.planwith_fo_story.domain.model.Story;
 import com.planwith.planwith_fo_story.domain.model.StoryPlace;
 import com.planwith.planwith_fo_story.domain.model.StoryPlaceImage;
@@ -16,6 +18,9 @@ final class StoryPersistenceMapper {
 	}
 
 	static Story toDomain(StoryJpaEntity entity) {
+		List<StoryVisitCountry> countries = entity.visitCountries().stream()
+				.map(StoryPersistenceMapper::toCountry)
+				.toList();
 		return Story.restore(
 				entity.storyId(),
 				StoryUuid.of(entity.storyUuid()),
@@ -36,8 +41,8 @@ final class StoryPersistenceMapper {
 				entity.createdAt(),
 				entity.updatedAt(),
 				entity.deletedAt(),
-				entity.visitCountries().stream().map(StoryPersistenceMapper::toCountry).toList(),
-				entity.places().stream().map(StoryPersistenceMapper::toPlace).toList(),
+				countries,
+				flattenPlaces(countries),
 				entity.tags().stream().map(tag -> StoryTag.restore(tag.storyTagId(), tag.tagName())).toList(),
 				entity.visibilityMembers().stream()
 						.map(member -> StoryVisibilityMember.restore(
@@ -73,9 +78,6 @@ final class StoryPersistenceMapper {
 		entity.replaceVisitCountries(story.visitCountries().stream()
 				.map(country -> toCountryEntity(entity, country))
 				.toList());
-		entity.replacePlaces(story.places().stream()
-				.map(place -> toPlaceEntity(entity, place))
-				.toList());
 		entity.replaceTags(story.tags().stream()
 				.map(tag -> new StoryTagJpaEntity(entity, tag.tagName()))
 				.toList());
@@ -97,7 +99,8 @@ final class StoryPersistenceMapper {
 						.map(city -> StoryVisitCity.restore(
 								city.storyVisitCityId(),
 								city.cityName(),
-								city.displayOrder()
+								city.displayOrder(),
+								city.places().stream().map(StoryPersistenceMapper::toPlace).toList()
 						))
 						.toList()
 		);
@@ -127,18 +130,29 @@ final class StoryPersistenceMapper {
 				country.displayOrder()
 		);
 		entity.replaceCities(country.cities().stream()
-				.map(city -> new StoryVisitCityJpaEntity(entity, city.cityName(), city.displayOrder()))
+				.map(city -> toCityEntity(story, entity, city))
 				.toList());
 		return entity;
 	}
 
-	private static StoryPlaceJpaEntity toPlaceEntity(StoryJpaEntity story, StoryPlace place) {
-		StoryPlaceJpaEntity entity = new StoryPlaceJpaEntity(
-				story,
-				place.storyVisitCityId(),
-				place.placeName(),
-				place.displayOrder()
-		);
+	private static StoryVisitCityJpaEntity toCityEntity(
+			StoryJpaEntity story,
+			StoryVisitCountryJpaEntity country,
+			StoryVisitCity city
+	) {
+		StoryVisitCityJpaEntity entity = new StoryVisitCityJpaEntity(country, city.cityName(), city.displayOrder());
+		entity.replacePlaces(city.places().stream()
+				.map(place -> toPlaceEntity(story, entity, place))
+				.toList());
+		return entity;
+	}
+
+	private static StoryPlaceJpaEntity toPlaceEntity(
+			StoryJpaEntity story,
+			StoryVisitCityJpaEntity city,
+			StoryPlace place
+	) {
+		StoryPlaceJpaEntity entity = new StoryPlaceJpaEntity(story, city, place.placeName(), place.displayOrder());
 		entity.replaceImages(place.images().stream()
 				.map(image -> new StoryPlaceImageJpaEntity(
 						entity,
@@ -148,5 +162,12 @@ final class StoryPersistenceMapper {
 				))
 				.toList());
 		return entity;
+	}
+
+	private static List<StoryPlace> flattenPlaces(List<StoryVisitCountry> countries) {
+		return countries.stream()
+				.flatMap(country -> country.cities().stream())
+				.flatMap(city -> city.places().stream())
+				.toList();
 	}
 }

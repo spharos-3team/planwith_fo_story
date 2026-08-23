@@ -294,13 +294,14 @@ public final class Story {
 
 	public Story replaceChildren(
 			List<StoryVisitCountry> visitCountries,
-			List<StoryPlace> places,
 			List<StoryTag> tags,
 			List<StoryVisibilityMember> visibilityMembers,
 			LocalDateTime updatedAt
 	) {
 		ensureActive();
-		COMMON_VALIDATOR.validateChildren(visibilityScope, visitCountries, places, tags, visibilityMembers);
+		List<StoryVisitCountry> resolvedCountries = visitCountries == null ? List.of() : visitCountries;
+		List<StoryPlace> flattenedPlaces = flattenPlaces(resolvedCountries);
+		COMMON_VALIDATOR.validateChildren(visibilityScope, resolvedCountries, flattenedPlaces, tags, visibilityMembers);
 		return copy(
 				scheduleUuid,
 				scheduleVisible,
@@ -313,8 +314,8 @@ public final class Story {
 				visibilityScope,
 				updatedAt,
 				deletedAt,
-				visitCountries,
-				places,
+				resolvedCountries,
+				flattenedPlaces,
 				tags,
 				visibilityMembers
 		);
@@ -523,7 +524,14 @@ public final class Story {
 	}
 
 	public List<StoryPlace> places() {
-		return places;
+		return places.isEmpty() ? flattenPlaces(visitCountries) : places;
+	}
+
+	private static List<StoryPlace> flattenPlaces(List<StoryVisitCountry> visitCountries) {
+		return visitCountries.stream()
+				.flatMap(country -> country.cities().stream())
+				.flatMap(city -> city.places().stream())
+				.toList();
 	}
 
 	public List<StoryTag> tags() {
