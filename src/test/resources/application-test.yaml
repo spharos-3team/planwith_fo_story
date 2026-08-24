@@ -33,6 +33,8 @@ management:
       enabled: false
 
 story:
+  gateway-auth:
+    enabled: false
   kafka:
     consumer-enabled: false
   outbox:

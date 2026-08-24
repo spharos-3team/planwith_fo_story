@@ -28,7 +28,7 @@ class RestStoryFeedMembershipQueryAdapterTest {
 		RestStoryFeedMembershipQueryAdapter adapter = new RestStoryFeedMembershipQueryAdapter(builder, properties);
 
 		server.expect(requestTo("http://membership-service/api/planwith-fo-membership/memberships/me/subscriptions"))
-				.andExpect(header("X-Member-UUID", viewerUuid.toString()))
+				.andExpect(header("X-Auth-User-Id", viewerUuid.toString()))
 				.andRespond(withSuccess("""
 						[
 						{"creatorUuid":"%s","status":"ACTIVE"},

@@ -36,7 +36,7 @@ public class RestStoryFeedMembershipQueryAdapter implements StoryFeedMembershipQ
 		try {
 			JoinedMembership[] memberships = restClient.get()
 					.uri(properties.getJoinedMembershipsPath())
-					.header("X-Member-UUID", viewerUuid.toString())
+					.header("X-Auth-User-Id", viewerUuid.toString())
 					.retrieve()
 					.body(JoinedMembership[].class);
 			if (memberships == null) {

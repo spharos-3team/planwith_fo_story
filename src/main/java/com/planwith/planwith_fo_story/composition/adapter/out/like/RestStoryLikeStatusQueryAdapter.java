@@ -34,7 +34,7 @@ public class RestStoryLikeStatusQueryAdapter implements StoryLikeStatusQueryPort
 		try {
 			LikeStatusResponse response = restClient.get()
 					.uri(properties.getLike().getStatusPath(), storyUuid)
-					.header("X-Member-UUID", viewerUuid.toString())
+					.header("X-Auth-User-Id", viewerUuid.toString())
 					.retrieve()
 					.body(LikeStatusResponse.class);
 			boolean liked = response != null && response.liked();

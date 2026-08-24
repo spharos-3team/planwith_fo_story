@@ -79,6 +79,8 @@ app:
     marker: ${DEPLOY_MARKER:planwith-fo-story-deploy-v1}
 
 story:
+  gateway-auth:
+    enabled: ${STORY_GATEWAY_AUTH_ENABLED:true}
   kafka:
     consumer-enabled: ${STORY_KAFKA_CONSUMER_ENABLED:false}
     topics:
