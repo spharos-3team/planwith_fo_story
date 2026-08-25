@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler(MissingRequestHeaderException.class)
 	public ResponseEntity<ApiErrorResponse> handleMissingRequestHeader(MissingRequestHeaderException exception) {
-		if ("X-Member-UUID".equals(exception.getHeaderName())) {
+		if ("X-Auth-User-Id".equals(exception.getHeaderName())) {
 			return createErrorResponse(
 					HttpStatus.UNAUTHORIZED,
 					"MEMBER_AUTHENTICATION_REQUIRED",

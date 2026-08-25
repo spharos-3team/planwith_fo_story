@@ -43,7 +43,7 @@ class MyStoryQueryControllerIntegrationTest {
 		));
 
 		mockMvc.perform(get("/api/stories/me")
-						.header("X-Member-UUID", ownerUuid)
+						.header("X-Auth-User-Id", ownerUuid)
 						.param("country", "Korea")
 						.param("city", "Seoul")
 						.param("visibilityScope", "MEMBER"))
@@ -60,7 +60,7 @@ class MyStoryQueryControllerIntegrationTest {
 				.andExpect(jsonPath("$.items[0].memberUuid").doesNotExist());
 
 		mockMvc.perform(get("/api/stories/me/{storyUuid}", story.storyUuid())
-						.header("X-Member-UUID", ownerUuid))
+						.header("X-Auth-User-Id", ownerUuid))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.storyUuid").value(story.storyUuid()))
 				.andExpect(jsonPath("$.title").value("My Story"));
@@ -72,7 +72,7 @@ class MyStoryQueryControllerIntegrationTest {
 				.andExpect(status().isUnauthorized());
 
 		mockMvc.perform(get("/api/stories/me")
-						.header("X-Member-UUID", UUID.randomUUID())
+						.header("X-Auth-User-Id", UUID.randomUUID())
 						.param("travelStartDate", "2026-08-10")
 						.param("travelEndDate", "2026-08-01"))
 				.andExpect(status().isBadRequest())
@@ -90,7 +90,7 @@ class MyStoryQueryControllerIntegrationTest {
 		));
 
 		mockMvc.perform(get("/api/stories/me/{storyUuid}", story.storyUuid())
-						.header("X-Member-UUID", UUID.randomUUID()))
+						.header("X-Auth-User-Id", UUID.randomUUID()))
 				.andExpect(status().isForbidden());
 	}
 }

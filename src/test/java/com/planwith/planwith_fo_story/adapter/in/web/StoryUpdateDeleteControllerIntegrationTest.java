@@ -39,7 +39,7 @@ class StoryUpdateDeleteControllerIntegrationTest {
 		));
 
 		mockMvc.perform(patch("/api/stories/{storyUuid}", created.storyUuid())
-						.header("X-Member-UUID", authorUuid)
+						.header("X-Auth-User-Id", authorUuid)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{
@@ -71,7 +71,7 @@ class StoryUpdateDeleteControllerIntegrationTest {
 				.andExpect(jsonPath("$.tags[0]").value("japan"));
 
 		mockMvc.perform(delete("/api/stories/{storyUuid}", created.storyUuid())
-						.header("X-Member-UUID", authorUuid))
+						.header("X-Auth-User-Id", authorUuid))
 				.andExpect(status().isNoContent());
 	}
 
@@ -84,12 +84,12 @@ class StoryUpdateDeleteControllerIntegrationTest {
 		));
 
 		mockMvc.perform(patch("/api/stories/{storyUuid}", created.storyUuid())
-						.header("X-Member-UUID", otherUuid)
+						.header("X-Auth-User-Id", otherUuid)
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(validUpdateBody()))
 				.andExpect(status().isForbidden());
 		mockMvc.perform(delete("/api/stories/{storyUuid}", created.storyUuid())
-						.header("X-Member-UUID", otherUuid))
+						.header("X-Auth-User-Id", otherUuid))
 				.andExpect(status().isForbidden());
 	}
 

@@ -37,7 +37,7 @@ class StoryCommandControllerScheduleTest {
 		when(scheduleOwnershipPort.isOwnedBy(any(), any())).thenReturn(false);
 
 		mockMvc.perform(post("/api/stories")
-						.header("X-Member-UUID", UUID.randomUUID())
+						.header("X-Auth-User-Id", UUID.randomUUID())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{

@@ -36,7 +36,7 @@ class StoryCommandControllerValidationTest {
 	@Test
 	void createWithoutTitleReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/stories")
-						.header("X-Member-UUID", UUID.randomUUID())
+						.header("X-Auth-User-Id", UUID.randomUUID())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{
@@ -56,7 +56,7 @@ class StoryCommandControllerValidationTest {
 	@Test
 	void createWithoutCommentEnabledReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/stories")
-						.header("X-Member-UUID", UUID.randomUUID())
+						.header("X-Auth-User-Id", UUID.randomUUID())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{
@@ -75,7 +75,7 @@ class StoryCommandControllerValidationTest {
 	@Test
 	void createWithScheduleVisibleWithoutScheduleUuidReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/stories")
-						.header("X-Member-UUID", UUID.randomUUID())
+						.header("X-Auth-User-Id", UUID.randomUUID())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{
@@ -104,7 +104,7 @@ class StoryCommandControllerValidationTest {
 	@Test
 	void createWithVideoCoverReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/stories")
-						.header("X-Member-UUID", UUID.randomUUID())
+						.header("X-Auth-User-Id", UUID.randomUUID())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{
@@ -132,7 +132,7 @@ class StoryCommandControllerValidationTest {
 	@Test
 	void createWithoutCountriesReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/stories")
-						.header("X-Member-UUID", UUID.randomUUID())
+						.header("X-Auth-User-Id", UUID.randomUUID())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{
@@ -152,7 +152,7 @@ class StoryCommandControllerValidationTest {
 	@Test
 	void createWithValidRequestSucceeds() throws Exception {
 		mockMvc.perform(post("/api/stories")
-						.header("X-Member-UUID", UUID.randomUUID())
+						.header("X-Auth-User-Id", UUID.randomUUID())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(validCreateBody()))
 				.andExpect(status().isCreated())
@@ -165,7 +165,7 @@ class StoryCommandControllerValidationTest {
 	@Test
 	void createPersistsNestedCountryCityPlaceImageAndTags() throws Exception {
 		mockMvc.perform(post("/api/stories")
-						.header("X-Member-UUID", UUID.randomUUID())
+						.header("X-Auth-User-Id", UUID.randomUUID())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{
@@ -219,7 +219,7 @@ class StoryCommandControllerValidationTest {
 	@Test
 	void createWithSixPlaceImagesReturnsBadRequest() throws Exception {
 		mockMvc.perform(post("/api/stories")
-						.header("X-Member-UUID", UUID.randomUUID())
+						.header("X-Auth-User-Id", UUID.randomUUID())
 						.contentType(MediaType.APPLICATION_JSON)
 						.content("""
 								{

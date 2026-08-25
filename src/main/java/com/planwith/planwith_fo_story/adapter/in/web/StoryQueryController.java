@@ -47,7 +47,7 @@ public class StoryQueryController {
 	// 스토리 상세 조회
 	@GetMapping("/{storyUuid}")
 	public ResponseEntity<StoryDetailResponse> getDetail(
-			@RequestHeader(value = "X-Member-UUID", required = false) UUID viewerUuid,
+			@RequestHeader(value = "X-Auth-User-Id", required = false) UUID viewerUuid,
 			@PathVariable UUID storyUuid
 	) {
 		log.info("StoryQueryController : GET getDetail : 스토리 상세 조회 요청");
@@ -59,7 +59,7 @@ public class StoryQueryController {
 	// 스토리 목록 조회
 	@GetMapping
 	public ResponseEntity<StoryListResponse> getList(
-			@RequestHeader(value = "X-Member-UUID", required = false) UUID viewerUuid,
+			@RequestHeader(value = "X-Auth-User-Id", required = false) UUID viewerUuid,
 			@RequestParam(required = false) UUID authorUuid,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
@@ -73,7 +73,7 @@ public class StoryQueryController {
 
 	@GetMapping("/search")
 	public ResponseEntity<StoryListResponse> search(
-			@RequestHeader(value = "X-Member-UUID", required = false) UUID viewerUuid,
+			@RequestHeader(value = "X-Auth-User-Id", required = false) UUID viewerUuid,
 			@RequestParam StorySearchType type,
 			@RequestParam @NotBlank @Size(max = 100) String keyword,
 			@RequestParam(defaultValue = "0") @Min(0) int page,
@@ -87,7 +87,7 @@ public class StoryQueryController {
 
 	@GetMapping("/me")
 	public ResponseEntity<MyStoryListResponse> getMyStories(
-			@RequestHeader("X-Member-UUID") UUID memberUuid,
+			@RequestHeader("X-Auth-User-Id") UUID memberUuid,
 			@RequestParam(required = false) @Size(max = 100) String country,
 			@RequestParam(required = false) @Size(max = 100) String city,
 			@RequestParam(required = false) VisibilityScope visibilityScope,
@@ -113,7 +113,7 @@ public class StoryQueryController {
 
 	@GetMapping("/me/{storyUuid}")
 	public ResponseEntity<StoryDetailResponse> getMyStoryDetail(
-			@RequestHeader("X-Member-UUID") UUID memberUuid,
+			@RequestHeader("X-Auth-User-Id") UUID memberUuid,
 			@PathVariable UUID storyUuid
 	) {
 		log.info("StoryQueryController : GET getMyStoryDetail : 내 스토리 상세 조회 요청");

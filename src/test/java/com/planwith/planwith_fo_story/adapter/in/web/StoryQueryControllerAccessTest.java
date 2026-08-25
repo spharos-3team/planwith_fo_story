@@ -46,7 +46,7 @@ class StoryQueryControllerAccessTest {
 		StoryDetailView created = create(authorUuid, VisibilityScope.PRIVATE, List.of(UUID.randomUUID()));
 
 		mockMvc.perform(get("/api/stories/{storyUuid}", created.storyUuid())
-						.header("X-Member-UUID", UUID.randomUUID()))
+						.header("X-Auth-User-Id", UUID.randomUUID()))
 				.andExpect(status().isForbidden())
 				.andExpect(jsonPath("$.code").value("STORY_ACCESS_DENIED"));
 	}

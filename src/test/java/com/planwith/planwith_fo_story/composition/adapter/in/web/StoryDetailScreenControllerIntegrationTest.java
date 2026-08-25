@@ -113,7 +113,7 @@ class StoryDetailScreenControllerIntegrationTest {
 		));
 
 		mockMvc.perform(get("/api/bff/stories/{storyUuid}", created.storyUuid())
-						.header("X-Member-UUID", UUID.randomUUID()))
+						.header("X-Auth-User-Id", UUID.randomUUID()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.comment.uiState").value("DISABLED"))
 				.andExpect(jsonPath("$.comment.message").value(CommentUiPolicy.DISABLED_MESSAGE))

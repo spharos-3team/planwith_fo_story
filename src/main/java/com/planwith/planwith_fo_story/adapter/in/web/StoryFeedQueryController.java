@@ -33,7 +33,7 @@ public class StoryFeedQueryController {
 	// 스토리 피드 조회
 	@GetMapping
 	public ResponseEntity<StoryListResponse> getFeed(
-			@RequestHeader(value = "X-Member-UUID", required = false) UUID viewerUuid,
+			@RequestHeader(value = "X-Auth-User-Id", required = false) UUID viewerUuid,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
 			@RequestParam(defaultValue = "LATEST") StorySortType sort,

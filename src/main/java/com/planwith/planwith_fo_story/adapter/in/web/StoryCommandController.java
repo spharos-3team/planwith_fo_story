@@ -49,7 +49,7 @@ public class StoryCommandController {
 
 	@PostMapping
 	public ResponseEntity<StoryDetailView> create(
-			@RequestHeader("X-Member-UUID") UUID actorUuid,
+			@RequestHeader("X-Auth-User-Id") UUID actorUuid,
 			@Valid @RequestBody CreateStoryRequest request
 	) {
 		log.info("StoryCommandController : POST create : 스토리 생성 요청");
@@ -59,7 +59,7 @@ public class StoryCommandController {
 
 	@PatchMapping("/{storyUuid}")
 	public ResponseEntity<StoryDetailView> update(
-			@RequestHeader("X-Member-UUID") UUID actorUuid,
+			@RequestHeader("X-Auth-User-Id") UUID actorUuid,
 			@PathVariable UUID storyUuid,
 			@Valid @RequestBody UpdateStoryRequest request
 	) {
@@ -69,7 +69,7 @@ public class StoryCommandController {
 
 	@DeleteMapping("/{storyUuid}")
 	public ResponseEntity<Void> delete(
-			@RequestHeader("X-Member-UUID") UUID actorUuid,
+			@RequestHeader("X-Auth-User-Id") UUID actorUuid,
 			@PathVariable UUID storyUuid
 	) {
 		log.info("StoryCommandController : DELETE delete : 스토리 삭제 요청");
@@ -79,7 +79,7 @@ public class StoryCommandController {
 
 	@PatchMapping("/{storyUuid}/visibility")
 	public ResponseEntity<StoryDetailView> changeVisibility(
-			@RequestHeader("X-Member-UUID") UUID actorUuid,
+			@RequestHeader("X-Auth-User-Id") UUID actorUuid,
 			@PathVariable UUID storyUuid,
 			@Valid @RequestBody ChangeStoryVisibilityRequest request
 	) {
@@ -93,7 +93,7 @@ public class StoryCommandController {
 
 	@PatchMapping("/{storyUuid}/comment-enabled")
 	public ResponseEntity<StoryDetailView> changeCommentEnabled(
-			@RequestHeader("X-Member-UUID") UUID actorUuid,
+			@RequestHeader("X-Auth-User-Id") UUID actorUuid,
 			@PathVariable UUID storyUuid,
 			@Valid @RequestBody ChangeStoryCommentEnabledRequest request
 	) {

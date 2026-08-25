@@ -31,7 +31,7 @@ public class StoryDetailScreenController {
 	// 스토리 상세 화면 통합 조회
 	@GetMapping("/{storyUuid}")
 	public ResponseEntity<StoryDetailScreenResponse> getDetailScreen(
-			@RequestHeader(value = "X-Member-UUID", required = false) UUID viewerUuid,
+			@RequestHeader(value = "X-Auth-User-Id", required = false) UUID viewerUuid,
 			@PathVariable UUID storyUuid
 	) {
 		log.info("StoryDetailScreenController : GET getDetailScreen : 스토리 상세 화면 통합 조회 요청");
