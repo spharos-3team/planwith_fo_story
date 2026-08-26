@@ -9,11 +9,18 @@ OTHER_UUID: 33333333-3333-3333-3333-333333333333
 STORY_UUID: 스토리 생성 응답의 storyUuid 값
 ```
 
+인증이 필요한 API는 Member 서비스의 `POST /api/v1/auth/login` 응답에서 사용자별 `accessToken`을 발급받아 사용한다.
+Gateway Swagger UI의 **Authorize**에서 `Bearer`를 선택하고 토큰 값만 입력한다. Swagger UI는 요청에
+`Authorization: Bearer <accessToken>`을 추가하며, Gateway는 검증된 토큰의 `sub`를
+`X-Auth-User-Id` 헤더로 변환하여 Story 서비스에 전달한다. `X-MEMBER-UUID` 또는
+`X-Auth-User-Id`를 클라이언트에서 직접 입력하지 않는다. 인증 없음 시나리오는 Authorize에서
+Logout한 뒤 실행한다.
+
 응답 예시는 기능별 검증에 필요한 핵심 필드를 중심으로 작성했다. 실제 Swagger 응답에는 DTO에 정의된 생성·수정 일시, 국가·도시·장소 등 추가 필드가 함께 표시될 수 있다.
 
 ---
 
-X-MEMBER-UUID: 없음
+인증: 없음
 
 기능명: 배포 상태 확인
 api 명: GET /api/planwith-fo-story/deploy-check
@@ -34,7 +41,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 없음
+인증: 없음
 
 기능명: 로그인
 api 명: POST /api/planwith-fo-story/login
@@ -57,7 +64,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 11111111-1111-1111-1111-111111111111
+인증: 필요 (AUTHOR_UUID 사용자의 Bearer 토큰)
 
 기능명: 스토리 생성
 api 명: POST /api/stories
@@ -131,7 +138,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 없음
+인증: 없음
 
 기능명: 공개 스토리 목록 조회
 api 명: GET /api/stories?page=0&size=20&sort=LATEST
@@ -166,7 +173,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 없음
+인증: 없음
 
 기능명: 공개 스토리 상세 조회
 api 명: GET /api/stories/{STORY_UUID}
@@ -210,7 +217,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 없음
+인증: 없음
 
 기능명: 국가명 스토리 검색
 api 명: GET /api/stories/search?type=COUNTRY&keyword=대한민국&page=0&size=20
@@ -238,7 +245,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 없음
+인증: 없음
 
 기능명: 도시명 스토리 검색
 api 명: GET /api/stories/search?type=CITY&keyword=서울&page=0&size=20
@@ -266,7 +273,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 11111111-1111-1111-1111-111111111111
+인증: 필요 (AUTHOR_UUID 사용자의 Bearer 토큰)
 
 기능명: 내 스토리 목록 조회
 api 명: GET /api/stories/me?country=대한민국&city=서울&page=0&size=20
@@ -299,7 +306,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 11111111-1111-1111-1111-111111111111
+인증: 필요 (AUTHOR_UUID 사용자의 Bearer 토큰)
 
 기능명: 내 스토리 상세 조회
 api 명: GET /api/stories/me/{STORY_UUID}
@@ -326,7 +333,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 11111111-1111-1111-1111-111111111111
+인증: 필요 (AUTHOR_UUID 사용자의 Bearer 토큰)
 
 기능명: 스토리 피드 조회
 api 명: GET /api/story-feeds?page=0&size=20&sort=LATEST&feedType=FOLLOWING
@@ -356,7 +363,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 11111111-1111-1111-1111-111111111111
+인증: 필요 (AUTHOR_UUID 사용자의 Bearer 토큰)
 
 기능명: 스토리 상세 화면 통합 조회
 api 명: GET /api/bff/stories/{STORY_UUID}
@@ -404,7 +411,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 없음
+인증: 없음
 
 기능명: 스토리 조회수 증가
 api 명: POST /api/stories/{STORY_UUID}/views
@@ -423,7 +430,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 11111111-1111-1111-1111-111111111111
+인증: 필요 (AUTHOR_UUID 사용자의 Bearer 토큰)
 
 기능명: 스토리 수정
 api 명: PATCH /api/stories/{STORY_UUID}
@@ -479,7 +486,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 11111111-1111-1111-1111-111111111111
+인증: 필요 (AUTHOR_UUID 사용자의 Bearer 토큰)
 
 기능명: 스토리 댓글 허용 여부 변경
 api 명: PATCH /api/stories/{STORY_UUID}/comment-enabled
@@ -505,7 +512,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 11111111-1111-1111-1111-111111111111
+인증: 필요 (AUTHOR_UUID 사용자의 Bearer 토큰)
 
 기능명: 스토리 공개범위 변경
 api 명: PATCH /api/stories/{STORY_UUID}/visibility
@@ -527,11 +534,11 @@ Response body:
 }
 ```
 
-확인 사항: 헤더 없이 상세 조회하면 HTTP 403, `OTHER_UUID` 헤더로 조회하면 HTTP 200인지 확인한다.
+확인 사항: Logout 상태로 상세 조회하면 HTTP 403, `OTHER_UUID` 사용자의 Bearer 토큰으로 조회하면 HTTP 200인지 확인한다.
 
 ---
 
-X-MEMBER-UUID: 11111111-1111-1111-1111-111111111111
+인증: 필요 (AUTHOR_UUID 사용자의 Bearer 토큰)
 
 기능명: PRIVATE 스토리 및 지정 회원 설정
 api 명: PATCH /api/stories/{STORY_UUID}
@@ -582,11 +589,11 @@ Response body:
 }
 ```
 
-확인 사항: `VIEWER_UUID`로 조회하면 HTTP 200, `OTHER_UUID` 또는 헤더 없이 조회하면 HTTP 403인지 확인한다.
+확인 사항: `VIEWER_UUID` 사용자의 Bearer 토큰으로 조회하면 HTTP 200, `OTHER_UUID` 사용자의 Bearer 토큰 또는 Logout 상태로 조회하면 HTTP 403인지 확인한다.
 
 ---
 
-X-MEMBER-UUID: 33333333-3333-3333-3333-333333333333
+인증: 필요 (OTHER_UUID 사용자의 Bearer 토큰)
 
 기능명: 타 회원 스토리 수정 권한 실패
 api 명: PATCH /api/stories/{STORY_UUID}
@@ -634,7 +641,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 없음
+인증: 없음 (401 응답 확인)
 
 기능명: 스토리 생성 인증 실패
 api 명: POST /api/stories
@@ -643,7 +650,7 @@ Request body:
 ```json
 {
   "title": "인증 실패 테스트",
-  "content": "회원 헤더가 없는 요청입니다.",
+  "content": "인증 토큰이 없는 요청입니다.",
   "coverImageUrl": "https://images.example.com/unauthorized.jpg",
   "startDate": "2026-08-01",
   "endDate": "2026-08-05",
@@ -682,7 +689,7 @@ Response body:
 
 ---
 
-X-MEMBER-UUID: 11111111-1111-1111-1111-111111111111
+인증: 필요 (AUTHOR_UUID 사용자의 Bearer 토큰)
 
 기능명: 스토리 삭제
 api 명: DELETE /api/stories/{STORY_UUID}
