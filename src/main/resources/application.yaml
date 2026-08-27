@@ -16,13 +16,13 @@ spring:
           time_zone: UTC
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST:}
+      port: ${REDIS_PORT:}
       password: ${REDIS_PASSWORD:}
       connect-timeout: ${REDIS_CONNECT_TIMEOUT:2s}
       timeout: ${REDIS_TIMEOUT:2s}
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
     producer:
       acks: all
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -36,7 +36,7 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     listener:
       ack-mode: record
-      auto-startup: ${STORY_KAFKA_CONSUMER_ENABLED:false}
+      auto-startup: ${STORY_KAFKA_CONSUMER_ENABLED:true}
 
 server:
   address: ${SERVER_ADDRESS:0.0.0.0}
@@ -57,9 +57,9 @@ management:
         include: health,info
   health:
     kafka:
-      enabled: false
+      enabled: true
     redis:
-      enabled: false
+      enabled: true
 
 springdoc:
   api-docs:
@@ -82,7 +82,7 @@ story:
   gateway-auth:
     enabled: ${STORY_GATEWAY_AUTH_ENABLED:true}
   kafka:
-    consumer-enabled: ${STORY_KAFKA_CONSUMER_ENABLED:false}
+    consumer-enabled: ${STORY_KAFKA_CONSUMER_ENABLED:true}
     topics:
       member-profile-changed: ${STORY_TOPIC_MEMBER_PROFILE_CHANGED:planwith.member.profile-changed}
       like-created: ${STORY_TOPIC_LIKE_CREATED:planwith.like.created}
@@ -96,7 +96,7 @@ story:
       story-deleted: ${STORY_TOPIC_STORY_DELETED:planwith.story.deleted}
       token-usage: ${STORY_TOPIC_TOKEN_USAGE:planwith.token.usage}
   outbox:
-    enabled: ${STORY_OUTBOX_ENABLED:false}
+    enabled: ${STORY_OUTBOX_ENABLED:true}
     relay-batch-size: ${STORY_OUTBOX_RELAY_BATCH_SIZE:50}
     relay-interval: ${STORY_OUTBOX_RELAY_INTERVAL:5s}
     relay-initial-delay: ${STORY_OUTBOX_RELAY_INITIAL_DELAY:5s}
@@ -106,47 +106,47 @@ story:
     backoff-multiplier: ${STORY_OUTBOX_BACKOFF_MULTIPLIER:2}
     backoff-max: ${STORY_OUTBOX_BACKOFF_MAX:5m}
   openai:
-    enabled: ${STORY_OPENAI_ENABLED:false}
+    enabled: ${STORY_OPENAI_ENABLED:true}
     api-key: ${OPENAI_API_KEY:}
     base-url: ${OPENAI_BASE_URL:https://api.openai.com}
     model: ${OPENAI_MODERATION_MODEL:omni-moderation-latest}
     moderation-path: ${OPENAI_MODERATION_PATH:/v1/moderations}
   schedule:
-    ownership-check-enabled: ${STORY_SCHEDULE_OWNERSHIP_CHECK_ENABLED:false}
+    ownership-check-enabled: ${STORY_SCHEDULE_OWNERSHIP_CHECK_ENABLED:true}
     base-url: ${SCHEDULE_SERVICE_URL:}
     ownership-path: ${STORY_SCHEDULE_OWNERSHIP_PATH:/api/schedules/{scheduleUuid}/owners/{memberUuid}}
   detail-screen:
     member:
-      query-enabled: ${STORY_DETAIL_SCREEN_MEMBER_QUERY_ENABLED:false}
+      query-enabled: ${STORY_DETAIL_SCREEN_MEMBER_QUERY_ENABLED:true}
       base-url: ${MEMBER_SERVICE_URL:}
       profile-path: ${STORY_DETAIL_SCREEN_MEMBER_PROFILE_PATH:/api/members/{memberUuid}/profile}
     follow:
-      query-enabled: ${STORY_DETAIL_SCREEN_FOLLOW_QUERY_ENABLED:false}
+      query-enabled: ${STORY_DETAIL_SCREEN_FOLLOW_QUERY_ENABLED:true}
       base-url: ${FOLLOW_SERVICE_URL:}
       summary-path: ${STORY_DETAIL_SCREEN_FOLLOW_SUMMARY_PATH:/api/members/{memberUuid}/follow-summary}
     schedule:
-      query-enabled: ${STORY_DETAIL_SCREEN_SCHEDULE_QUERY_ENABLED:false}
+      query-enabled: ${STORY_DETAIL_SCREEN_SCHEDULE_QUERY_ENABLED:true}
       base-url: ${SCHEDULE_SERVICE_URL:}
       detail-path: ${STORY_DETAIL_SCREEN_SCHEDULE_DETAIL_PATH:/api/schedules/{scheduleUuid}}
     like:
-      query-enabled: ${STORY_DETAIL_SCREEN_LIKE_QUERY_ENABLED:false}
+      query-enabled: ${STORY_DETAIL_SCREEN_LIKE_QUERY_ENABLED:true}
       base-url: ${LIKE_SERVICE_URL:}
       status-path: ${STORY_DETAIL_SCREEN_LIKE_STATUS_PATH:/api/stories/{storyUuid}/likes/me}
     comment:
-      query-enabled: ${STORY_DETAIL_SCREEN_COMMENT_QUERY_ENABLED:false}
+      query-enabled: ${STORY_DETAIL_SCREEN_COMMENT_QUERY_ENABLED:true}
       base-url: ${COMMENT_SERVICE_URL:}
       list-path: ${STORY_DETAIL_SCREEN_COMMENT_LIST_PATH:/api/stories/{storyUuid}/comments}
   feed:
-    member-query-enabled: ${STORY_FEED_MEMBER_QUERY_ENABLED:false}
+    member-query-enabled: ${STORY_FEED_MEMBER_QUERY_ENABLED:true}
     member-base-url: ${MEMBER_SERVICE_URL:}
     followings-path: ${STORY_FEED_FOLLOWINGS_PATH:/api/v1/members/{memberUuid}/followings}
     members-path: ${STORY_FEED_MEMBERS_PATH:/api/v1/members/search}
-    membership-query-enabled: ${STORY_FEED_MEMBERSHIP_QUERY_ENABLED:false}
+    membership-query-enabled: ${STORY_FEED_MEMBERSHIP_QUERY_ENABLED:true}
     membership-base-url: ${MEMBERSHIP_SERVICE_URL:}
     joined-memberships-path: ${STORY_FEED_JOINED_MEMBERSHIPS_PATH:/api/planwith-fo-membership/memberships/me/subscriptions}
     eligible-grades: ${STORY_FEED_ELIGIBLE_GRADES:ADVENTURE,PLANWITH}
   search:
-    member-query-enabled: ${STORY_SEARCH_MEMBER_QUERY_ENABLED:false}
+    member-query-enabled: ${STORY_SEARCH_MEMBER_QUERY_ENABLED:true}
     member-base-url: ${MEMBER_SERVICE_URL:}
     member-search-path: ${STORY_SEARCH_MEMBER_PATH:/api/v1/members/search}
   cache:
